@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "noImplicitAny": true,
+        "removeComments": true,
+        "sourceMap": true,
+        "noImplicitReturns": true,
+        "target": "es5",
+        "outDir": "js"
+    },
+    "include": [
+        "ts/**/*.ts"
+    ]
+}

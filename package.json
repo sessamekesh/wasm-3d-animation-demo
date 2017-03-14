@@ -1,0 +1,16 @@
+{
+  "name": "indigo-animation-demo",
+  "version": "1.0.0",
+  "description": "Demo showing off the power of WASM via a WebGL animation demo using three systems (naive JavaScript implementation, optimized JavaScript, JavaScript with WASM module)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kamaron Peterson",
+  "license": "MIT",
+  "dependencies": {
+    "ts-loader": "^2.0.1",
+    "typescript": "^2.2.1",
+    "webpack": "^2.2.1"
+  }
+}
