@@ -5,8 +5,9 @@
         "removeComments": true,
         "sourceMap": true,
         "noImplicitReturns": true,
-        "target": "es5",
-        "outDir": "js"
+        "target": "es6",
+        "outDir": "js",
+        "strictNullChecks": true
     },
     "include": [
         "ts/**/*.ts"
