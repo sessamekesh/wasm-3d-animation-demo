@@ -1,3 +1,4 @@
+import {Animation, AnimatedBone, PositionKeyframe, RotationKeyframe, ScalingKeyframe} from './animation';
 import {Color} from '../math/color';
 import {ModelData, AnimatedEntityVertex, AnimatedEntityRenderCall, AnimatedEntityProgram} from '../render/program/animatedentityprogram';
 import {Material} from '../render/material';
@@ -11,6 +12,7 @@ let RUN_URL = '/assets/standard_run.json';
 let DANCE_URLS = ['/assets/samba_dancing.json', '/assets/tut_hip_hop_dance.json', '/assets/wave_hip_hop_dance.json'];
 
 let betaModelData: ModelData[]|null = null;
+let betaAnimationData: Animation[] = [];
 
 export function getModelData(): Promise<ModelData[]> {
     if (betaModelData) {
@@ -95,22 +97,117 @@ export function getModelData(): Promise<ModelData[]> {
     });
 }
 
-// TODO SESS: Continue here with "getDanceData(index: number): Promise<AnimationData>"
+export function getDanceData(index: number): Promise<Animation> {
+    if (!!betaAnimationData[index]) {
+        return Promise.resolve(betaAnimationData[index]);
+    }
 
-// TODO SESS: Do the animation interface!
-/*
------ REGISTRATION / INITIALIZATION -----
-- Register "Animation" objects (containing all the bones, offsets, keyframes)
-- Register "ModelData" objects (containing list of needed bones, and individual bone offsets for the model)
-- Register "Animation" and "ModelData" against each other - verification only in naive approaches, build caches in memoized approaches
+    return fetch(DANCE_URLS[index]).then<any>((response) => {
+        if (response.status >= 300) {
+            return Promise.reject(response.statusText);
+        } else {
+            return response.json();
+        }
+    }).then((jsonData: any) => {
+        let anim = jsonData.animations[0];
 
------ FRAME DATA -----
-- getSingleAnimation(Animation, ModelData, animationTime): [BoneMatrix, extraMemoryUsage]
-- getBlendedAnimation(Animation1, Animation2, ModelData, animation1Time, animation2Time, blendFactor): [BoneMatrix, extraMemoryUsage]
+        let duration = anim.duration / anim.tickspersecond;
 
------ METRICS DATA -----
-- getStaticMemoryUsage() // How much data is being used in caches, if any? Do not include wasted WASM heap space
+        let toAdd = new Animation(duration);
 
-Outputs must not be mutated (WASM and optimized approaches, they are simply views to sensitive buffers)
+        let nodes: {[id: string]: any} = {};
+        let parents: {[id: string]: any} = {};
 
-*/
+        //
+        // Add static bones to the animation
+        //
+        let nodeQueue: {element: any, parent: any}[] = [];
+        nodeQueue.push({
+            element: jsonData.rootnode,
+            parent: null
+        });
+        while (nodeQueue.length > 0) {
+            let next = nodeQueue.pop();
+            if (!next) continue; // VSCode things
+
+            let parent = next.parent;
+            let element = next.element;
+            let tm = element.transformation;
+
+            if (nodes[element.name]) {
+                console.error('Two nodes with the same name. Replacing old node. This is a problem!');
+            }
+            nodes[element.name] = element;
+            parents[element.name] = parent;
+
+            if (toAdd.staticBones.has(element.name)) {
+                console.error('Bone read twice! Replacing old bone. This is a problem!');
+            }
+
+            toAdd.staticBones.set(element.name, {
+                parent: next.parent,
+                transform: new Mat4().setElements(
+                    tm[ 0], tm[ 4], tm[ 8], tm[12],
+                    tm[ 1], tm[ 5], tm[ 9], tm[13],
+                    tm[ 2], tm[ 6], tm[10], tm[14],
+                    tm[ 3], tm[ 7], tm[11], tm[15]
+                )
+            });
+
+            for (let child in element.children) {
+                nodeQueue.push({
+                    parent: element.name,
+                    element: element.children[child]
+                });
+            }
+        }
+
+        //
+        // Add channels to the animation
+        //
+        for (let channelIdx = 0; channelIdx < anim.channels.length; channelIdx++) {
+            let channel = anim.channels[channelIdx];
+            let boneName = channel.name;
+            let parent = nodes[parents[boneName]];
+            let node = nodes[boneName];
+
+            let nt = node.transformation;
+            let toParentTransform = new Mat4().setElements(
+                nt[ 0], nt[ 4], nt[ 8], nt[12],
+                nt[ 1], nt[ 5], nt[ 9], nt[13],
+                nt[ 2], nt[ 6], nt[10], nt[14],
+                nt[ 3], nt[ 7], nt[11], nt[15]
+            );
+
+            let positions: PositionKeyframe[] = [];
+            let rotations: RotationKeyframe[] = [];
+            let scales: ScalingKeyframe[] = [];
+
+            for (let pki = 0; pki < channel.positionkeys.length; pki++) {
+                positions.push(new PositionKeyframe(
+                    channel.positionkeys[pki][0],
+                    new Vec3(channel.positionkeys[pki][1][0], channel.positionkeys[pki][1][1], channel.positionkeys[pki][1][2])
+                ));
+            }
+
+            for (let idx = 0; idx < channel.rotationkeys.length; idx++) {
+                rotations.push(new RotationKeyframe(
+                    channel.rotationkeys[idx][0],
+                    new Quaternion(channel.rotationkeys[idx][0], channel.rotationkeys[idx][1], channel.rotationkeys[idx][2], channel.rotationkeys[idx][3])
+                ));
+            }
+
+            for (let idx = 0; idx < channel.scalingkeys.length; idx++) {
+                scales.push(new ScalingKeyframe(
+                    channel.scalingkeys[idx][0],
+                    new Vec3(channel.scalingkeys[idx][1][0], channel.scalingkeys[idx][1][1], channel.scalingkeys[idx][1][2])
+                ));
+            }
+
+            toAdd.animatedBones.set(boneName, new AnimatedBone(positions, rotations, scales));
+        }
+
+        betaAnimationData[index] = toAdd;
+        return toAdd;
+    });
+}
