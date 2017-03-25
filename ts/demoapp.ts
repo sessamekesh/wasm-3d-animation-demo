@@ -89,9 +89,17 @@ class Demo {
         // Perform associations...
         betaModelData.forEach((model) => ANIMATION_MANAGER.registerModel(model));
         ANIMATION_MANAGER.registerAnimation(betaRun);
-        betaModelData.forEach((model) => ANIMATION_MANAGER.associateModelAndAnimation(betaRun, model));
+        betaModelData.forEach((model) => {
+            if (!ANIMATION_MANAGER.associateModelAndAnimation(betaRun, model)) {
+                console.error('Error - model', model, 'and animation', betaRun, 'cannot be associated!');
+            }
+        });
         betaDances.forEach((dance) => ANIMATION_MANAGER.registerAnimation(dance));
-        betaDances.forEach((dance) => betaModelData.forEach((model) => ANIMATION_MANAGER.associateModelAndAnimation(dance, model)));
+        betaDances.forEach((dance) => betaModelData.forEach((model) => {
+            if (!ANIMATION_MANAGER.associateModelAndAnimation(dance, model)) {
+                console.error('Error - model', model, 'and animation', betaRun, 'cannot be associated!');
+            };
+        }));
 
         let numRunners = parseInt(getParameterByName('numrunners') || '4');
         const NUM_RUNNERS = isNaN(numRunners) ? 4 : numRunners;

@@ -220,6 +220,22 @@ export class Mat4 {
             (a20 * b03 - a21 * b01 + a22 * b00) * det
         );
     }
+
+    public static mul(a: Mat4, b: Mat4): Mat4 {
+        let tr = new Mat4();
+
+        
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 4; col++) {
+                tr.data[row * 4 + col] = 0;
+                for (let k = 0; k < 4; k++) {
+                    tr.data[row * 4 + col] += b.data[row * 4 + k] * a.data[k * 4 + col];
+                }
+            }
+        }
+
+        return tr;
+    }
 }
 
 export const IDENTITY: Mat4 = new Mat4();

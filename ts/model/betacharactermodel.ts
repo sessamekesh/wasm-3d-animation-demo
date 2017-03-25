@@ -21,7 +21,6 @@ let betaModelData: ModelData[]|null = null;
 let betaAnimationData: Animation[] = [];
 
 export function getModelData(): Promise<ModelData[]> {
-    debugger;
     if (betaModelData) {
         return Promise.resolve(betaModelData);
     }
