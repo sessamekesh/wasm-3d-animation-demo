@@ -108,13 +108,8 @@ void main(void) {
     skinMat += vWeights.z * boneMat[int(vBones.z)];
     skinMat += vWeights.w * boneMat[int(vBones.w)];
 
-    if (skinMat[0][0] == 222.0) {
-        fWorldPos = (mModel * skinMat * vec4(vPos, 1.0)).xyz;
-        fWorldNormal = (mModel * skinMat * vec4(vNorm, 0.0)).xyz;
-    } else {
-        fWorldPos = (mModel * vec4(vPos, 1.0)).xyz;
-        fWorldNormal = (mModel * vec4(vNorm, 0.0)).xyz;
-    }
+    fWorldPos = (mModel * skinMat * vec4(vPos, 1.0)).xyz;
+    fWorldNormal = (mModel * skinMat * vec4(vNorm, 0.0)).xyz;
 
     gl_Position = mProj * mView * vec4(fWorldPos, 1.0);
 }
@@ -321,8 +316,8 @@ export class AnimatedEntityProgram {
         gl.bindBuffer(gl.ARRAY_BUFFER, call.modelData.vb);
         gl.vertexAttribPointer(this.positionAttrib, 3, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 0);
         gl.vertexAttribPointer(this.normalAttrib, 3, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
-        gl.vertexAttribPointer(this.weightsAttrib, 3, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
-        gl.vertexAttribPointer(this.bonesAttrib, 3, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
+        gl.vertexAttribPointer(this.weightsAttrib, 4, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+        gl.vertexAttribPointer(this.bonesAttrib, 4, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.modelData.ib);
 

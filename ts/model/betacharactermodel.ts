@@ -6,9 +6,15 @@ import {Mat4} from '../math/mat4';
 import {Quaternion} from '../math/quaternion';
 import {Vec3} from '../math/vec3';
 
-let RUN_SPEED = 3;
-let MODEL_URL = '/assets/Beta.json';
-let ANIM_URLS = ['/assets/standard_run.json', '/assets/samba_dancing.json', '/assets/tut_hip_hop_dance.json', '/assets/wave_hip_hop_dance.json'];
+//let MODEL_URL = '/assets/Beta.json';
+let MODEL_URL = '/assets/testcharacter/beta.json';
+//let ANIM_URLS = ['/assets/standard_run.json', '/assets/samba_dancing.json', '/assets/tut_hip_hop_dance.json', '/assets/wave_hip_hop_dance.json'];
+let ANIM_URLS = [
+    '/assets/testcharacter/sprint_forward.json',
+    '/assets/testcharacter/standing_idle.json',
+    '/assets/testcharacter/standing_idle.json',
+    '/assets/testcharacter/standing_idle.json',
+];
 
 export enum ANIMATIONS {
     RUN = 0,
@@ -53,8 +59,8 @@ export function getModelData(): Promise<ModelData[]> {
 
             for (let boneIdx = 0; boneIdx < mesh.bones.length; boneIdx++) {
                 let bone = mesh.bones[boneIdx];
-                boneNames.push(bone.name);
                 let om = bone.offsetmatrix;
+                boneNames.push(bone.name);
                 boneOffsets.push(new Mat4().setElements(
                     om[ 0], om[ 4], om[ 8], om[12],
                     om[ 1], om[ 5], om[ 9], om[13],
