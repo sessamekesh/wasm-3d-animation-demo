@@ -191,21 +191,21 @@ export function getAnimationData(index: ANIMATIONS): Promise<Animation> {
 
             for (let pki = 0; pki < channel.positionkeys.length; pki++) {
                 positions.push(new PositionKeyframe(
-                    channel.positionkeys[pki][0],
+                    channel.positionkeys[pki][0] / anim.tickspersecond,
                     new Vec3(channel.positionkeys[pki][1][0], channel.positionkeys[pki][1][1], channel.positionkeys[pki][1][2])
                 ));
             }
 
             for (let idx = 0; idx < channel.rotationkeys.length; idx++) {
                 rotations.push(new RotationKeyframe(
-                    channel.rotationkeys[idx][0],
+                    channel.rotationkeys[idx][0] / anim.tickspersecond,
                     new Quaternion(channel.rotationkeys[idx][1][0], channel.rotationkeys[idx][1][1], channel.rotationkeys[idx][1][2], channel.rotationkeys[idx][1][3])
                 ));
             }
 
             for (let idx = 0; idx < channel.scalingkeys.length; idx++) {
                 scales.push(new ScalingKeyframe(
-                    channel.scalingkeys[idx][0],
+                    channel.scalingkeys[idx][0] / anim.tickspersecond,
                     new Vec3(channel.scalingkeys[idx][1][0], channel.scalingkeys[idx][1][1], channel.scalingkeys[idx][1][2])
                 ));
             }

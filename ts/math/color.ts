@@ -14,7 +14,8 @@ export class Color {
     public g() { return this.data[1]; }
     public b() { return this.data[2]; }
     public a() { return this.data[3]; }
-}
 
-export const WHITE = new Color(1, 1, 1, 1);
-export const AL_INDIGO = new Color(64/255, 52/255, 139/255, 1);
+    // Constants
+    public static WHITE = new Color(1, 1, 1, 1);
+    public static AL_INDIGO = new Color(64/255, 52/255, 139/255, 1);
+}

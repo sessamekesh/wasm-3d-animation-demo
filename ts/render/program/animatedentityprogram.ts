@@ -41,12 +41,11 @@ export class ModelData {
                 Float32Array.BYTES_PER_ELEMENT * 3 // pos
                 + Float32Array.BYTES_PER_ELEMENT * 3 // normal
                 + Float32Array.BYTES_PER_ELEMENT * 4 // bone weights
-                + Uint8Array.BYTES_PER_ELEMENT * 4 // bone indices
+                + Float32Array.BYTES_PER_ELEMENT * 4 // bone indices
             );
 
             let verts = new ArrayBuffer(this.vertices.length * vertStride);
             let floatView = new Float32Array(verts);
-            let uintView = new Uint8Array(verts);
 
             for (let i = 0; i < this.vertices.length; i++) {
                 let vert = this.vertices[i];
@@ -54,12 +53,12 @@ export class ModelData {
                 let posIdx = i * vertStride / Float32Array.BYTES_PER_ELEMENT;
                 let normIdx  = i * vertStride / Float32Array.BYTES_PER_ELEMENT + 3;
                 let weightIdx = i * vertStride / Float32Array.BYTES_PER_ELEMENT + 6;
-                let idxIdx = i * vertStride + Float32Array.BYTES_PER_ELEMENT * 10;
+                let idxIdx = i * vertStride / Float32Array.BYTES_PER_ELEMENT + 10;
 
                 floatView.set(vert.pos.data, posIdx);
                 floatView.set(vert.normal.data, normIdx);
                 floatView.set(vert.boneWeights, weightIdx);
-                uintView.set(vert.boneIndices, idxIdx);
+                floatView.set(vert.boneIndices, idxIdx);
             }
 
             this.vb = gl.createBuffer();
@@ -98,19 +97,24 @@ uniform mat4 boneMat[${MAX_BONES_PER_MESH}];
 attribute vec3 vPos;
 attribute vec3 vNorm;
 attribute vec4 vWeights;
-attribute uvec4 vBones;
+attribute vec4 vBones;
 
 varying vec3 fWorldPos;
 varying vec3 fWorldNormal;
 
 void main(void) {
-    mat4 skinMat = vWeights.x * boneMat[vBones.x];
-    skinMat += vWeights.y * boneMat[vBones.y];
-    skinMat += vWeights.z * boneMat[vBones.z];
-    skinMat += vWeights.w * boneMat[vBones.w];
+    mat4 skinMat = vWeights.x * boneMat[int(vBones.x)];
+    skinMat += vWeights.y * boneMat[int(vBones.y)];
+    skinMat += vWeights.z * boneMat[int(vBones.z)];
+    skinMat += vWeights.w * boneMat[int(vBones.w)];
 
-    fWorldPos = (mModel * skinMat * vec4(vPos, 1.0)).xyz;
-    fWorldNormal = (mModel * skinMat * vec4(vNorm, 0.0)).xyz;
+    if (skinMat[0][0] == 222.0) {
+        fWorldPos = (mModel * skinMat * vec4(vPos, 1.0)).xyz;
+        fWorldNormal = (mModel * skinMat * vec4(vNorm, 0.0)).xyz;
+    } else {
+        fWorldPos = (mModel * vec4(vPos, 1.0)).xyz;
+        fWorldNormal = (mModel * vec4(vNorm, 0.0)).xyz;
+    }
 
     gl_Position = mProj * mView * vec4(fWorldPos, 1.0);
 }
@@ -132,7 +136,7 @@ struct Light {
 };
 uniform Material objectMaterial;
 uniform Light sun;
-uniform vec3 cameraPosition;
+// uniform vec3 cameraPosition;
 
 varying vec3 fWorldPos;
 varying vec3 fWorldNormal;
@@ -140,7 +144,7 @@ varying vec3 fWorldNormal;
 void main() {
     vec4 ambient = objectMaterial.ambient * sun.ambient;
     vec4 diffuse = vec4(0, 0, 0, 0);
-    float diffuseFactor = clamp(-dot(sun.direction, fWorldNormal), 0, 1);
+    float diffuseFactor = clamp(-dot(sun.direction, fWorldNormal), 0.0, 1.0);
     diffuse = diffuseFactor * objectMaterial.diffuse * sun.diffuse;
 
     gl_FragColor = clamp(ambient + diffuse, 0.0, 1.0);
@@ -168,7 +172,7 @@ export class AnimatedEntityProgram {
         this.materialAmbientColor = null;
         this.materialDiffuseColor = null;
 
-        this.cameraPosition = null;
+        // this.cameraPosition = null;
     }
 
     //
@@ -188,7 +192,7 @@ export class AnimatedEntityProgram {
     private materialAmbientColor: WebGLUniformLocation|null;
     private materialDiffuseColor: WebGLUniformLocation|null;
 
-    private cameraPosition: WebGLUniformLocation|null;
+    // private cameraPosition: WebGLUniformLocation|null;
 
     //
     // Attributes
@@ -236,12 +240,12 @@ export class AnimatedEntityProgram {
 
             this.lightAmbientColor = gl.getUniformLocation(this.program, 'sun.ambient');
             this.lightDiffuseColor = gl.getUniformLocation(this.program, 'sun.diffuse');
-            this.lightDiffuseColor = gl.getUniformLocation(this.program, 'sun.direction');
+            this.lightDirection = gl.getUniformLocation(this.program, 'sun.direction');
 
             this.materialAmbientColor = gl.getUniformLocation(this.program, 'objectMaterial.ambient');
             this.materialDiffuseColor = gl.getUniformLocation(this.program, 'objectMaterial.diffuse');
 
-            this.cameraPosition = gl.getUniformLocation(this.program, 'cameraPosition');
+            // this.cameraPosition = gl.getUniformLocation(this.program, 'cameraPosition');
 
             // Get Attribute Handles
             this.positionAttrib = gl.getAttribLocation(this.program, 'vPos');
@@ -288,31 +292,38 @@ export class AnimatedEntityProgram {
         gl.uniform3fv(this.lightDirection, lightData.direction.data);
     }
 
-    public setPerFrameData(gl: WebGLRenderingContext, viewMatrix: Mat4, frameBones: Float32Array, cameraPos: Vec3) {
+    public setPerFrameData(gl: WebGLRenderingContext, viewMatrix: Mat4, cameraPos: Vec3) {
         if (this.gl != gl) return;
 
-        if (!(this.viewTransform && this.bonesArray && this.cameraPosition)) {
+        // if (!(this.viewTransform && this.cameraPosition)) {
+        if (!this.viewTransform) {
             return console.warn('Needed uniforms not set - aborting');
         }
 
         gl.uniformMatrix4fv(this.viewTransform, false, viewMatrix.data);
-        gl.uniformMatrix4fv(this.bonesArray, false, frameBones);
-        gl.uniform3fv(this.cameraPosition, cameraPos.data);
+        // gl.uniform3fv(this.cameraPosition, cameraPos.data);
     }
 
-    public renderObject(gl: WebGLRenderingContext, call: AnimatedEntityRenderCall) {
+    public renderObject(gl: WebGLRenderingContext, call: AnimatedEntityRenderCall, bones: Float32Array) {
         if (this.gl != gl) return;
 
-        if (!(this.modelTransform && this.materialAmbientColor && this.materialDiffuseColor)) {
+        if (!(this.modelTransform && this.materialAmbientColor && this.materialDiffuseColor && this.bonesArray)) {
             return console.warn('Needed uniforms not set - aborting');
         }
 
         gl.uniformMatrix4fv(this.modelTransform, false, call.worldTransform.data);
         gl.uniform4fv(this.materialAmbientColor, call.modelData.material.ambient.data);
         gl.uniform4fv(this.materialDiffuseColor, call.modelData.material.diffuse.data);
+        gl.uniformMatrix4fv(this.bonesArray, false, bones);
 
         call.modelData.prepare(gl);
+
         gl.bindBuffer(gl.ARRAY_BUFFER, call.modelData.vb);
+        gl.vertexAttribPointer(this.positionAttrib, 3, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 0);
+        gl.vertexAttribPointer(this.normalAttrib, 3, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
+        gl.vertexAttribPointer(this.weightsAttrib, 3, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 6 * Float32Array.BYTES_PER_ELEMENT);
+        gl.vertexAttribPointer(this.bonesAttrib, 3, gl.FLOAT, false, 14 * Float32Array.BYTES_PER_ELEMENT, 10 * Float32Array.BYTES_PER_ELEMENT);
+
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, call.modelData.ib);
 
         gl.drawElements(gl.TRIANGLES, call.modelData.indices.length, gl.UNSIGNED_SHORT, 0);

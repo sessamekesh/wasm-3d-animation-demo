@@ -1,9 +1,12 @@
 import {Camera} from './model/camera';
+
+import {Color} from './math/color';
 import {Vec3} from './math/vec3';
 import {Mat4} from './math/mat4';
 import {Quaternion} from './math/quaternion';
 
-import {AnimatedEntityProgram} from './render/program/animatedentityprogram';
+import {AnimatedEntityProgram, AnimatedEntityRenderCall} from './render/program/animatedentityprogram';
+import {DirectionalLight} from './render/directionallight';
 
 import {getModelData, getAnimationData, ANIMATIONS} from './model/betacharactermodel';
 import {ModelData} from './render/program/animatedentityprogram';
@@ -16,6 +19,8 @@ import {NaiveWASMAnimationManager} from './model/naivewasmanimationmanager';
 import {SpeedyJSAnimationManager} from './model/speedyjsanimationmanager';
 import {SpeedyWASMAnimationManager} from './model/speedywasmanimationmanager';
 
+// TODO SESS: Add stats https://github.com/mrdoob/stats.js/
+
 function getParameterByName(name: string, url?: string): string|null {
     if (!url) {
       url = window.location.href;
@@ -27,6 +32,16 @@ function getParameterByName(name: string, url?: string): string|null {
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
+
+let getCachedParameterByName = (function () {
+    let paramCache: Map<string, any> = new Map();
+    return (name: string, defaultValue: any, url?: string) => {
+        if (!paramCache.has(name)) {
+            paramCache.set(name, getParameterByName(name, url) || defaultValue);
+        }
+        return paramCache.get(name);
+    }
+})();
 
 class Demo {
     constructor() {}
@@ -53,22 +68,25 @@ class Demo {
         // Set up the model
         //
         let camera = new Camera(
-            new Vec3(0, 0, -800),
-            new Vec3(0, 0, 0),
+            new Vec3(0, 185, 300),
+            new Vec3(0, 85, 0),
             new Vec3(0, 1, 0)
         );
 
         let projMatrix = new Mat4().perspective(
             Math.PI * 0.45,
-            gl.drawingBufferWidth / gl.drawingBufferHeight,
+            gl.canvas.clientWidth / gl.canvas.clientHeight,
             0.1,
             1000.0
         );
+        gl.canvas.width = gl.canvas.clientWidth;
+        gl.canvas.height = gl.canvas.clientHeight;
 
-        const VELOCITY = 100;
+        const VELOCITY = 180;
         const START_POS = new Vec3(-500, 0, 0);
         const END_POS = new Vec3(500, 0, 0);
         const DISTANCE_TO_TRAVEL = 1000;
+        const EACH_OFFSET = new Vec3(0, 0, -100);
 
         let animationManagerType: string = getParameterByName('system') || 'default';
         if (['naivejs', 'speedyjs', 'naivewasm', 'speedywasm'].indexOf(animationManagerType) == -1) {
@@ -101,34 +119,72 @@ class Demo {
             };
         }));
 
-        let numRunners = parseInt(getParameterByName('numrunners') || '4');
-        const NUM_RUNNERS = isNaN(numRunners) ? 4 : numRunners;
+        let numRunners = parseInt(getParameterByName('numrunners') || '2');
+        const NUM_RUNNERS = isNaN(numRunners) ? 2 : numRunners;
         
         let runners: Entity[] = [];
-        for (let i = 0; i < numRunners; i++) {
+        for (let i = 0; i < NUM_RUNNERS; i++) {
             runners.push(CreateRandomDancingEntity(
                 betaRun,
                 betaDances,
                 ANIMATION_MANAGER,
                 DISTANCE_TO_TRAVEL,
-                VELOCITY
+                VELOCITY, {
+                    minStartRunTime: getCachedParameterByName('minstartruntime', undefined),
+                    minDanceCycles: getCachedParameterByName('mindancecycles', undefined),
+                    maxDanceCycles: getCachedParameterByName('maxdancecycles', undefined)
+                }
             ));
         }
 
         window.addEventListener('resize', () => {
             if (!gl) return; 
+
             projMatrix = new Mat4().perspective(
                 Math.PI * 0.45,
-                gl.drawingBufferWidth / gl.drawingBufferHeight,
+                gl.canvas.clientWidth / gl.canvas.clientHeight,
                 0.1,
                 1000.0
             );
+            gl.canvas.width = gl.canvas.clientWidth;
+            gl.canvas.height = gl.canvas.clientHeight;
+
+            program.prepare(gl);
+            program.setSceneData(gl, projMatrix, new DirectionalLight(
+                Color.WHITE,
+                Color.WHITE,
+                new Vec3(1, -3, 0.7).setNormal()
+            ));
+            program.disengage(gl);
         });
 
         //
         // Make the GL resources
         //
         let program = new AnimatedEntityProgram();
+        let calls: AnimatedEntityRenderCall[] = betaModelData.map((model) => new AnimatedEntityRenderCall(model, new Mat4()));
+
+        program.prepare(gl);
+        program.setSceneData(gl, projMatrix, new DirectionalLight(
+            Color.WHITE,
+            Color.WHITE,
+            new Vec3(-1, -3, -0.7).setNormal()
+        ));
+        program.disengage(gl);
+
+        // http://stackoverflow.com/a/87732
+        let calcAverageTick = (() => {
+            let ticklist = new Float32Array(100);
+            let tickindex = 0;
+            let ticksum = 0;
+            return (newTick: number) => {
+                ticksum -= ticklist[tickindex];
+                ticksum = ticksum + newTick;
+                ticklist[tickindex] = newTick;
+                if (++tickindex == ticklist.length) tickindex = 0;
+                return ticksum / ticklist.length;
+            };
+        });
 
         let lastFrame = performance.now();
         let thisFrame: number;
@@ -138,7 +194,7 @@ class Demo {
             // Timing
             //
             thisFrame = performance.now();
-            dt = thisFrame - lastFrame;
+            dt = (thisFrame - lastFrame) / 1000;
             lastFrame = thisFrame;
 
             //
@@ -159,10 +215,35 @@ class Demo {
             //
             // Model Updates
             //
+            for (let i = 0; i < runners.length; i++) {
+                runners[i].update(dt);
+                if (runners[i].isFinished()) {
+                    runners[i] = CreateRandomDancingEntity(betaRun, betaDances, ANIMATION_MANAGER, DISTANCE_TO_TRAVEL, VELOCITY);
+                }
+            }
 
             //
             // Scene Rendering
             //
+            program.prepare(gl);
+
+
+            program.setPerFrameData(gl, camera.getViewMatrix(), camera.getPosition());
+            for (let i = 0; i < runners.length; i++) {
+                for (let j = 0; j < calls.length; j++) {
+                    let animationData = runners[i].getAnimationData(calls[j].modelData);
+                    // TODO SESS: Handle the extra memory used here
+                    calls[j].worldTransform.setRotationTranslationScale(
+                        Quaternion.IDENTITY,
+                        Vec3.lerp(START_POS, END_POS, runners[i].getTrackPos() / DISTANCE_TO_TRAVEL).setAdd(EACH_OFFSET.scale(i)),
+                        Vec3.ONES
+                    );
+
+                    program.renderObject(gl, calls[j], animationData.boneData);
+                }
+            }
+
+            program.disengage(gl);
 
             requestAnimationFrame(frame);
         };

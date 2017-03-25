@@ -23,23 +23,23 @@ export class Vec3 {
     public sqLength(): number { return this.x() ** 2 + this.y() ** 2 + this.z() ** 2; }
     public length(): number { return Math.sqrt(this.sqLength()); }
 
-    public scale(scale: number) {
-        this.data[0] *= scale;
-        this.data[1] *= scale;
-        this.data[2] *= scale;
-        return this;
-    }
+    
+    public scale(scale: number) { return this.clone().setScale(scale); }
+    public normal(): Vec3 { return this.clone().setNormal(); }
 
-    public normal(): Vec3 {
+    public setNormal(): Vec3 {
         let mag = this.length();
         this.data[0] /= mag;
         this.data[1] /= mag;
         this.data[2] /= mag;
         return this;
     }
-
-    public setNormal(): Vec3 { return this.clone().normal(); }
-    public setScale(scale: number) { return this.clone().scale(scale); }
+    public setScale(scale: number) {
+        this.data[0] *= scale;
+        this.data[1] *= scale;
+        this.data[2] *= scale;
+        return this;
+    }
 
     public static dot(a: Vec3, b: Vec3) {
         return a.data[0] * b.data[0] + a.data[1] * b.data[1] + a.data[2] * b.data[2];
@@ -83,10 +83,10 @@ export class Vec3 {
         this.data[2] += b.z();
         return this;
     }
-};
 
-export const UNIT_X = new Vec3(1, 0, 0);
-export const UNIT_Y = new Vec3(0, 1, 0);
-export const UNIT_Z = new Vec3(0, 0, 1);
-export const ZEROS = new Vec3(0, 0, 0);
-export const ONES = new Vec3(1, 1, 1);
+    public static UNIT_X = new Vec3(1, 0, 0);
+    public static UNIT_Y = new Vec3(0, 1, 0);
+    public static UNIT_Z = new Vec3(0, 0, 1);
+    public static ZEROS = new Vec3(0, 0, 0);
+    public static ONES = new Vec3(1, 1, 1);
+};

@@ -113,4 +113,6 @@ export class Quaternion {
             .setAdd(v.scale(s * s - Vec3.dot(u, u)))
             .setAdd(Vec3.cross(u, v).setScale(2 * s));
     }
+
+    public static IDENTITY = new Quaternion();
 }

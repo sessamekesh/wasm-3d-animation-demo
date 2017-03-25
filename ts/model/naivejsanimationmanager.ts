@@ -120,7 +120,7 @@ export class NaiveJSAnimationManager extends AnimationManager {
             pos = bone.positionChannel[0].position;
         } else {
             let posTime = time % bone.positionChannel[bone.positionChannel.length - 1].time;
-            if (posTime < 0) posTime += bone.positionChannel[bone.positionChannel.length - 1].time;
+            if (posTime < 0) posTime = posTime + bone.positionChannel[bone.positionChannel.length - 1].time;
 
             let idx = 0;
             while ((idx < bone.positionChannel.length - 1)
@@ -140,7 +140,7 @@ export class NaiveJSAnimationManager extends AnimationManager {
             rot = bone.rotationChannel[0].rotation;
         } else {
             let rotTime = time % bone.rotationChannel[bone.rotationChannel.length - 1].time;
-            if (rotTime < 0) rotTime += bone.rotationChannel[bone.rotationChannel.length - 1].time;
+            if (rotTime < 0) rotTime = rotTime + bone.rotationChannel[bone.rotationChannel.length - 1].time;
 
             let idx = 0;
             while ((idx < bone.rotationChannel.length - 1)
@@ -160,7 +160,7 @@ export class NaiveJSAnimationManager extends AnimationManager {
             scl = bone.scalingChannel[0].scale;
         } else {
             let sclTime = time % bone.scalingChannel[bone.scalingChannel.length - 1].time;
-            if (sclTime < 0) sclTime += bone.scalingChannel[bone.scalingChannel.length - 1].time;
+            if (sclTime < 0) sclTime = sclTime + bone.scalingChannel[bone.scalingChannel.length - 1].time;
 
             let idx = 0;
             while ((idx < bone.scalingChannel.length - 1)
