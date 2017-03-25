@@ -8,13 +8,20 @@ import {Vec3} from '../math/vec3';
 
 let RUN_SPEED = 3;
 let MODEL_URL = '/assets/Beta.json';
-let RUN_URL = '/assets/standard_run.json';
-let DANCE_URLS = ['/assets/samba_dancing.json', '/assets/tut_hip_hop_dance.json', '/assets/wave_hip_hop_dance.json'];
+let ANIM_URLS = ['/assets/standard_run.json', '/assets/samba_dancing.json', '/assets/tut_hip_hop_dance.json', '/assets/wave_hip_hop_dance.json'];
+
+export enum ANIMATIONS {
+    RUN = 0,
+    SAMBA = 1,
+    TUT = 2,
+    WAVE = 3
+};
 
 let betaModelData: ModelData[]|null = null;
 let betaAnimationData: Animation[] = [];
 
 export function getModelData(): Promise<ModelData[]> {
+    debugger;
     if (betaModelData) {
         return Promise.resolve(betaModelData);
     }
@@ -81,8 +88,8 @@ export function getModelData(): Promise<ModelData[]> {
 
             let indices = new Uint16Array([].concat.apply([], mesh.faces));
 
-            let ambientColor = jsonData.materials[mesh.materialindex].properties.filter((x:any)=>x.key==='$clr.ambient')[0];
-            let diffuseColor = jsonData.materials[mesh.materialindex].properties.filter((x:any)=>x.key==='$clr.diffuse')[0];
+            let ambientColor = jsonData.materials[mesh.materialindex].properties.filter((x:any)=>x.key==='$clr.ambient')[0].value;
+            let diffuseColor = jsonData.materials[mesh.materialindex].properties.filter((x:any)=>x.key==='$clr.diffuse')[0].value;
 
             tr.push(new ModelData(
                 new Material(new Color(ambientColor[0], ambientColor[1], ambientColor[2], ambientColor[3]), new Color(diffuseColor[0], diffuseColor[1], diffuseColor[2], diffuseColor[3])),
@@ -97,12 +104,12 @@ export function getModelData(): Promise<ModelData[]> {
     });
 }
 
-export function getDanceData(index: number): Promise<Animation> {
+export function getAnimationData(index: ANIMATIONS): Promise<Animation> {
     if (!!betaAnimationData[index]) {
         return Promise.resolve(betaAnimationData[index]);
     }
 
-    return fetch(DANCE_URLS[index]).then<any>((response) => {
+    return fetch(ANIM_URLS[index]).then<any>((response) => {
         if (response.status >= 300) {
             return Promise.reject(response.statusText);
         } else {
@@ -193,7 +200,7 @@ export function getDanceData(index: number): Promise<Animation> {
             for (let idx = 0; idx < channel.rotationkeys.length; idx++) {
                 rotations.push(new RotationKeyframe(
                     channel.rotationkeys[idx][0],
-                    new Quaternion(channel.rotationkeys[idx][0], channel.rotationkeys[idx][1], channel.rotationkeys[idx][2], channel.rotationkeys[idx][3])
+                    new Quaternion(channel.rotationkeys[idx][1][0], channel.rotationkeys[idx][1][1], channel.rotationkeys[idx][1][2], channel.rotationkeys[idx][1][3])
                 ));
             }
 
