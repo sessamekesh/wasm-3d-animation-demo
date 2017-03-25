@@ -30,8 +30,8 @@ export class NaiveJSAnimationManager extends AnimationManager {
     public associateModelAndAnimation(animation: Animation, model: ModelData): boolean {
         // Simply make sure that the animaiton and model are compatible - i.e., that the animation
         //  contains all the bones that the modle needs to operate
-        for (let i = 0; i < model.boneNames.length; i++) {
-            let name = model.boneNames[i];
+        for (var i = 0; i < model.boneNames.length; i++) {
+            var name = model.boneNames[i];
             // TODO SESS: Is it necessary to check both? All of them _should_ be in the static bones...
             if (!(animation.staticBones.has(name) || animation.animatedBones.has(name))) {
                 console.warn('ASSOCIATION FALIED: Bone', name, 'in model', model, 'missing from animation', animation);
@@ -42,17 +42,17 @@ export class NaiveJSAnimationManager extends AnimationManager {
         return true;
     }
     public getSingleAnimation(animation: Animation, model: ModelData, animationTime: number): AnimationResult {
-        let rslBuffer = new Float32Array(model.boneNames.length * 16);
+        var rslBuffer = new Float32Array(model.boneNames.length * 16);
 
-        for (let idx = 0; idx < model.boneNames.length; idx++) {
-            let animatedTransform = this.getAnimatedNodeTransform(animation, animationTime, model.boneNames[idx]);
+        for (var idx = 0; idx < model.boneNames.length; idx++) {
+            var animatedTransform = this.getAnimatedNodeTransform(animation, animationTime, model.boneNames[idx]);
             rslBuffer.set(
                 Mat4.mul(animatedTransform, model.boneOffsets[idx]).data,
                 idx * 16
             );
         }
 
-        let extraMemoryUsed =
+        var extraMemoryUsed =
             rslBuffer.length * Float32Array.BYTES_PER_ELEMENT // Actual result buffer created
             + 10 * Float32Array.BYTES_PER_ELEMENT // pos, rot, scl for individual transform (done iteratively)
             + 16 * Float32Array.BYTES_PER_ELEMENT // Transform matrix computed from pos, rot, scl
@@ -62,19 +62,19 @@ export class NaiveJSAnimationManager extends AnimationManager {
     }
     public getBlendedAnimation(animations: [Animation, Animation], model: ModelData, animationTimes: [number, number], blendFactor: number): AnimationResult {
         // Do a cheap interpolation here (matrix) - not as accurate, but it is sufficient
-        let r1 = this.getSingleAnimation(animations[0], model, animationTimes[0]);
-        let r2 = this.getSingleAnimation(animations[1], model, animationTimes[1]);
+        var r1 = this.getSingleAnimation(animations[0], model, animationTimes[0]);
+        var r2 = this.getSingleAnimation(animations[1], model, animationTimes[1]);
 
-        let lerp = (a: number, b: number, t: number) => {
+        var lerp = (a: number, b: number, t: number) => {
             return a * (1 - t) + b * t;
         };
 
-        let rslBuffer = new Float32Array(model.boneNames.length * 16);
-        for (let idx = 0; idx < rslBuffer.length; idx++) {
+        var rslBuffer = new Float32Array(model.boneNames.length * 16);
+        for (var idx = 0; idx < rslBuffer.length; idx++) {
             rslBuffer[idx] = lerp(r1.boneData[idx], r2.boneData[idx], blendFactor);
         }
 
-        let extraMemoryUsed =
+        var extraMemoryUsed =
             r1.extraMemoryUsage + r2.extraMemoryUsage
             + rslBuffer.length * Float32Array.BYTES_PER_ELEMENT;
 
@@ -93,16 +93,16 @@ export class NaiveJSAnimationManager extends AnimationManager {
             return new Mat4();
         }
 
-        let staticBone = animation.staticBones.get(nodeName);
+        var staticBone = animation.staticBones.get(nodeName);
         if (!staticBone) {
             console.warn('Bone', name, 'not found in animation - using identity', animation);
             return new Mat4();
         }
 
-        let parentTransform = this.getAnimatedNodeTransform(animation, animationTime, staticBone.parent);
-        let animatedBone = animation.animatedBones.get(nodeName);
+        var parentTransform = this.getAnimatedNodeTransform(animation, animationTime, staticBone.parent);
+        var animatedBone = animation.animatedBones.get(nodeName);
         if (animatedBone) {
-            let childTransform = this.getTransformAtTime(animatedBone, animationTime);
+            var childTransform = this.getTransformAtTime(animatedBone, animationTime);
             return Mat4.mul(parentTransform, childTransform);
         } else {
             return Mat4.mul(parentTransform, staticBone.transform);
@@ -111,18 +111,18 @@ export class NaiveJSAnimationManager extends AnimationManager {
 
     protected getTransformAtTime(bone: AnimatedBone, time: number): Mat4 {
         // This is where the real expensive work goes - lots of processing numbers
-        let pos: Vec3;
-        let rot: Quaternion;
-        let scl: Vec3 = new Vec3();
+        var pos: Vec3;
+        var rot: Quaternion;
+        var scl: Vec3 = new Vec3();
 
         // Get position component...
         if (bone.positionChannel.length === 1) {
             pos = bone.positionChannel[0].position;
         } else {
-            let posTime = time % bone.positionChannel[bone.positionChannel.length - 1].time;
+            var posTime = time % bone.positionChannel[bone.positionChannel.length - 1].time;
             if (posTime < 0) posTime = posTime + bone.positionChannel[bone.positionChannel.length - 1].time;
 
-            let idx = 0;
+            var idx = 0;
             while ((idx < bone.positionChannel.length - 1)
                 && (bone.positionChannel[idx].time <= posTime)
                 && (bone.positionChannel[idx + 1].time <= posTime)
@@ -130,7 +130,7 @@ export class NaiveJSAnimationManager extends AnimationManager {
                 idx++;
             }
 
-            let ratio = (posTime - bone.positionChannel[idx].time) / (bone.positionChannel[idx + 1].time - bone.positionChannel[idx].time);
+            var ratio = (posTime - bone.positionChannel[idx].time) / (bone.positionChannel[idx + 1].time - bone.positionChannel[idx].time);
 
             pos = Vec3.lerp(bone.positionChannel[idx].position, bone.positionChannel[idx + 1].position, ratio);
         }
@@ -139,10 +139,10 @@ export class NaiveJSAnimationManager extends AnimationManager {
         if (bone.rotationChannel.length === 1) {
             rot = bone.rotationChannel[0].rotation;
         } else {
-            let rotTime = time % bone.rotationChannel[bone.rotationChannel.length - 1].time;
+            var rotTime = time % bone.rotationChannel[bone.rotationChannel.length - 1].time;
             if (rotTime < 0) rotTime = rotTime + bone.rotationChannel[bone.rotationChannel.length - 1].time;
 
-            let idx = 0;
+            var idx = 0;
             while ((idx < bone.rotationChannel.length - 1)
                 && (bone.rotationChannel[idx].time <= rotTime)
                 && (bone.rotationChannel[idx + 1].time <= rotTime)
@@ -150,7 +150,7 @@ export class NaiveJSAnimationManager extends AnimationManager {
                 idx++;
             }
 
-            let ratio = (rotTime - bone.rotationChannel[idx].time) / (bone.rotationChannel[idx + 1].time - bone.rotationChannel[idx].time);
+            var ratio = (rotTime - bone.rotationChannel[idx].time) / (bone.rotationChannel[idx + 1].time - bone.rotationChannel[idx].time);
 
             rot = Quaternion.slerp(bone.rotationChannel[idx].rotation, bone.rotationChannel[idx + 1].rotation, ratio);
         }
@@ -159,10 +159,10 @@ export class NaiveJSAnimationManager extends AnimationManager {
         if (bone.scalingChannel.length === 1) {
             scl = bone.scalingChannel[0].scale;
         } else {
-            let sclTime = time % bone.scalingChannel[bone.scalingChannel.length - 1].time;
+            var sclTime = time % bone.scalingChannel[bone.scalingChannel.length - 1].time;
             if (sclTime < 0) sclTime = sclTime + bone.scalingChannel[bone.scalingChannel.length - 1].time;
 
-            let idx = 0;
+            var idx = 0;
             while ((idx < bone.scalingChannel.length - 1)
                 && (bone.scalingChannel[idx].time <= sclTime)
                 && (bone.scalingChannel[idx + 1].time <= sclTime)
@@ -170,7 +170,7 @@ export class NaiveJSAnimationManager extends AnimationManager {
                 idx++;
             }
 
-            let ratio = (sclTime - bone.scalingChannel[idx].time) / (bone.scalingChannel[idx + 1].time - bone.scalingChannel[idx].time);
+            var ratio = (sclTime - bone.scalingChannel[idx].time) / (bone.scalingChannel[idx + 1].time - bone.scalingChannel[idx].time);
 
             scl = Vec3.lerp(bone.scalingChannel[idx].scale, bone.scalingChannel[idx + 1].scale, ratio);
         }
