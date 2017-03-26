@@ -6,15 +6,8 @@ import {Mat4} from '../math/mat4';
 import {Quaternion} from '../math/quaternion';
 import {Vec3} from '../math/vec3';
 
-//let MODEL_URL = '/assets/Beta.json';
-let MODEL_URL = '/assets/testcharacter/beta.json';
-//let ANIM_URLS = ['/assets/standard_run.json', '/assets/samba_dancing.json', '/assets/tut_hip_hop_dance.json', '/assets/wave_hip_hop_dance.json'];
-let ANIM_URLS = [
-    '/assets/testcharacter/sprint_forward.json',
-    '/assets/testcharacter/standing_idle.json',
-    '/assets/testcharacter/standing_idle.json',
-    '/assets/testcharacter/standing_idle.json',
-];
+let MODEL_URL = '/assets/Beta.json';
+let ANIM_URLS = ['/assets/standard_run.json', '/assets/samba_dancing.json', '/assets/tut_hip_hop_dance.json', '/assets/wave_hip_hop_dance.json'];
 
 export enum ANIMATIONS {
     RUN = 0,

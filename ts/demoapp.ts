@@ -57,7 +57,8 @@ class Demo {
     }
 
     protected start(canvas: HTMLCanvasElement, betaModelData: ModelData[], betaRun: Animation, betaDances: Animation[]) {
-        console.log('Loaded and starting!');
+        // With everything loaded, start opening up the screen
+        document.body.className += " loaded";
 
         let gl = canvas.getContext('webgl');
         if (!gl) {
@@ -68,7 +69,7 @@ class Demo {
         // Set up the model
         //
         let camera = new Camera(
-            new Vec3(0, 185, 300),
+            new Vec3(0, 185, 600),
             new Vec3(0, 85, 0),
             new Vec3(0, 1, 0)
         );
@@ -77,16 +78,16 @@ class Demo {
             Math.PI * 0.45,
             gl.canvas.clientWidth / gl.canvas.clientHeight,
             0.1,
-            1000.0
+            2000.0
         );
         gl.canvas.width = gl.canvas.clientWidth;
         gl.canvas.height = gl.canvas.clientHeight;
 
         const VELOCITY = 180;
-        const START_POS = new Vec3(-500, 0, 0);
-        const END_POS = new Vec3(500, 0, 0);
-        const DISTANCE_TO_TRAVEL = 1000;
-        const EACH_OFFSET = new Vec3(0, 0, -100);
+        const START_POS = new Vec3(0, 0, -500);
+        const END_POS = new Vec3(0, 0, 500);
+        const DISTANCE_TO_TRAVEL = END_POS.sub(START_POS).length();
+        const EACH_OFFSET = new Vec3(175, 0, 0);
 
         let animationManagerType: string = getParameterByName('system') || 'default';
         if (['naivejs', 'speedyjs', 'naivewasm', 'speedywasm'].indexOf(animationManagerType) == -1) {
@@ -119,8 +120,8 @@ class Demo {
             };
         }));
 
-        let numRunners = parseInt(getParameterByName('numrunners') || '2');
-        const NUM_RUNNERS = isNaN(numRunners) ? 2 : numRunners;
+        let numRunners = parseInt(getParameterByName('numrunners') || '8');
+        const NUM_RUNNERS = isNaN(numRunners) ? 8 : numRunners;
         
         let runners: Entity[] = [];
         for (let i = 0; i < NUM_RUNNERS; i++) {
@@ -141,10 +142,10 @@ class Demo {
             if (!gl) return; 
 
             projMatrix = new Mat4().perspective(
-                Math.PI * 0.45,
+                Math.PI * 0.65,
                 gl.canvas.clientWidth / gl.canvas.clientHeight,
                 0.1,
-                1000.0
+                2000.0
             );
             gl.canvas.width = gl.canvas.clientWidth;
             gl.canvas.height = gl.canvas.clientHeight;
@@ -157,6 +158,12 @@ class Demo {
             ));
             program.disengage(gl);
         });
+        let stats = new Stats();
+        stats.showPanel(1);
+        let animationTimePanel = stats.addPanel(new Stats.Panel('AnimationTime', '#f8f', '#212'));
+        stats.showPanel(3);
+
+        document.body.appendChild(stats.domElement);
 
         //
         // Make the GL resources
@@ -172,20 +179,6 @@ class Demo {
         ));
         program.disengage(gl);
 
-        // http://stackoverflow.com/a/87732
-        let calcAverageTick = (() => {
-            let ticklist = new Float32Array(100);
-            let tickindex = 0;
-            let ticksum = 0;
-            return (newTick: number) => {
-                ticksum -= ticklist[tickindex];
-                ticksum = ticksum + newTick;
-                ticklist[tickindex] = newTick;
-                if (++tickindex == ticklist.length) tickindex = 0;
-                return ticksum / ticklist.length;
-            };
-        });
-
         let lastFrame = performance.now();
         let thisFrame: number;
         let dt: number;
@@ -194,9 +187,10 @@ class Demo {
             // Timing
             //
             thisFrame = performance.now();
-            dt = (thisFrame - lastFrame) / 1000;
+            dt = (thisFrame - lastFrame) / 6000;
             lastFrame = thisFrame;
 
+            stats.begin();
             //
             // GL resources
             //
@@ -227,23 +221,29 @@ class Demo {
             //
             program.prepare(gl);
 
-
             program.setPerFrameData(gl, camera.getViewMatrix(), camera.getPosition());
+            let sum = 0;
             for (let i = 0; i < runners.length; i++) {
                 for (let j = 0; j < calls.length; j++) {
+                    let b4 = performance.now();
                     let animationData = runners[i].getAnimationData(calls[j].modelData);
+                    let after = performance.now();
+                    sum = sum + (after - b4);
                     // TODO SESS: Handle the extra memory used here
                     calls[j].worldTransform.setRotationTranslationScale(
                         Quaternion.IDENTITY,
-                        Vec3.lerp(START_POS, END_POS, runners[i].getTrackPos() / DISTANCE_TO_TRAVEL).setAdd(EACH_OFFSET.scale(i)),
+                        Vec3.lerp(START_POS, END_POS, runners[i].getTrackPos() / DISTANCE_TO_TRAVEL).setAdd(EACH_OFFSET.scale(i - runners.length / 2)),
                         Vec3.ONES
                     );
 
                     program.renderObject(gl, calls[j], animationData.boneData);
                 }
             }
+            animationTimePanel.update(sum, 8.5 * runners.length);
 
             program.disengage(gl);
+
+            stats.end();
 
             requestAnimationFrame(frame);
         };
