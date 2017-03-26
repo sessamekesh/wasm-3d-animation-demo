@@ -57,7 +57,7 @@ export class EntityTrack {
         if (this.animation2) {
             return this.animationManager.getBlendedAnimation([this.animation1.animation, this.animation2.animation], model, [
                 (this.animation1.startTime + this.tick),
-                (this.animation1.startTime + this.tick)
+                (this.animation2.startTime + this.tick)
             ], this.tick / this.duration);
         } else {
             return this.animationManager.getSingleAnimation(this.animation1.animation, model, this.animation1.startTime + this.tick);
@@ -95,10 +95,10 @@ export function CreateRandomDancingEntity(
     options.minEndRunTime = options.minEndRunTime || (distanceToTravel / velocity) * 0.1;
     options.maxEndRunTime = options.maxEndRunTime || (distanceToTravel / velocity) * 0.2;
     options.minDanceBreaks = options.minDanceBreaks || 1;
-    options.maxDanceBreaks = options.maxDanceBreaks || 4;
+    options.maxDanceBreaks = options.maxDanceBreaks || 1;
     options.minDanceCycles = options.minDanceCycles || 1;
-    options.maxDanceCycles = options.maxDanceCycles || 2;
-    options.danceFadeInTime = options.danceFadeInTime || 0.2;
+    options.maxDanceCycles = options.maxDanceCycles || 1;
+    options.danceFadeInTime = options.danceFadeInTime || 0.5;
     options.danceFadeOutTime = options.danceFadeOutTime || options.danceFadeInTime;
 
     let tr: EntityTrack[] = [];
@@ -106,7 +106,7 @@ export function CreateRandomDancingEntity(
     let runningTimeRemaining = distanceToTravel / velocity;
     let endRunTime = Math.random() * (options.maxEndRunTime - options.minEndRunTime) + options.minEndRunTime;
 
-    let previousAnimation: Animation|null = null;
+    let lastRunTime = 0;
 
     // Start with running for an amount of time
     let startRunTime = Math.random() * (options.maxStartRunTime - options.minStartRunTime) + options.minStartRunTime;
@@ -119,6 +119,7 @@ export function CreateRandomDancingEntity(
         trackPos, trackPos = velocity * startRunTime
     ));
     runningTimeRemaining -= startRunTime;
+    lastRunTime = startRunTime;
 
     // In the middle, have dances, interspersed by runnings
     let numDanceBreaks = Math.round(Math.random() * (options.maxDanceBreaks - options.minDanceBreaks)) + options.minDanceBreaks;
@@ -130,10 +131,10 @@ export function CreateRandomDancingEntity(
         let numCycles = Math.round(Math.random() * (options.maxDanceBreaks - options.minDanceCycles)) + options.minDanceCycles;
         options.danceFadeInTime && tr.push(new EntityTrack(
             options.danceFadeInTime,
-            { startTime: 0, animation: run },
+            { startTime: lastRunTime % run.duration, animation: run },
             { startTime: 0, animation: dances[animIndex] },
             animationManager,
-            trackPos, trackPos
+            trackPos, trackPos = trackPos
         ));
 
         // Dance!
@@ -162,6 +163,8 @@ export function CreateRandomDancingEntity(
             animationManager,
             trackPos, trackPos += velocity * timeDelta
         ));
+
+        lastRunTime = timeDelta + options.danceFadeOutTime;
     }
 
     return new Entity(tr);

@@ -83,7 +83,7 @@ class Demo {
         gl.canvas.width = gl.canvas.clientWidth;
         gl.canvas.height = gl.canvas.clientHeight;
 
-        const VELOCITY = 180;
+        const VELOCITY = 80;
         const START_POS = new Vec3(0, 0, -500);
         const END_POS = new Vec3(0, 0, 500);
         const DISTANCE_TO_TRAVEL = END_POS.sub(START_POS).length();
@@ -187,7 +187,7 @@ class Demo {
             // Timing
             //
             thisFrame = performance.now();
-            dt = (thisFrame - lastFrame) / 6000;
+            dt = (thisFrame - lastFrame) / 1000;
             lastFrame = thisFrame;
 
             stats.begin();
