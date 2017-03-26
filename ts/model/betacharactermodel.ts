@@ -205,7 +205,7 @@ export function getAnimationData(index: ANIMATIONS): Promise<Animation> {
             for (let idx = 0; idx < channel.rotationkeys.length; idx++) {
                 rotations.push(new RotationKeyframe(
                     channel.rotationkeys[idx][0] / anim.tickspersecond,
-                    new Quaternion(channel.rotationkeys[idx][1][0], channel.rotationkeys[idx][1][1], channel.rotationkeys[idx][1][2], channel.rotationkeys[idx][1][3])
+                    new Quaternion(channel.rotationkeys[idx][1][1], channel.rotationkeys[idx][1][2], channel.rotationkeys[idx][1][3], channel.rotationkeys[idx][1][0])
                 ));
             }
 
