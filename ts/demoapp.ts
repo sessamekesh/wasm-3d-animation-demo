@@ -69,7 +69,7 @@ class Demo {
         // Set up the model
         //
         let camera = new Camera(
-            new Vec3(0, 185, 600),
+            new Vec3(0, 285, 600),
             new Vec3(0, 85, 0),
             new Vec3(0, 1, 0)
         );
@@ -84,8 +84,8 @@ class Demo {
         gl.canvas.height = gl.canvas.clientHeight;
 
         const VELOCITY = 80;
-        const START_POS = new Vec3(0, 0, -500);
-        const END_POS = new Vec3(0, 0, 500);
+        const START_POS = new Vec3(0, 0, -800);
+        const END_POS = new Vec3(0, 0, 750);
         const DISTANCE_TO_TRAVEL = END_POS.sub(START_POS).length();
         const EACH_OFFSET = new Vec3(175, 0, 0);
 
