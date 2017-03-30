@@ -5,6 +5,14 @@
 
 #include "include/math.h"
 
+#define ERR_NULLPTR 0
+#define ERR_DEBUGMSG 1
+#define ERR_NOTFOUND 2
+extern "C"
+{
+extern void alertError(uint32_t, uint32_t, uint32_t);
+}
+
 // Expectation: Animated bones are in the animation in-order when inserted
 //  Channels are also pre-sorted, because writing that garbage in C doesn't sound like a fun afternoon
 
@@ -17,6 +25,10 @@ void getTransformAtTime(Mat4& o_rsl, const AnimatedBone& bone, float time)
     Vec3 pos;
     Quat rot;
     Vec3 scl;
+
+    if (bone.positionChannel == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+    if (bone.rotationChannel == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+    if (bone.scalingChannel == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
 
     // Get position component...
     if (1u == bone.nPositionKeyframes)
@@ -98,7 +110,12 @@ void getAnimatedNodeTransform(Mat4& o, const Animation& animation, float animati
         return;
     }
     
-    StaticBone staticBone = animation.staticBones[id];
+    StaticBone staticBone;
+    if (!getStaticBone(staticBone, animation, id))
+    {
+        alertError(ERR_NOTFOUND, __LINE__, id);
+        return; // TODO SESS: Fail more obviously here (leave a console log with the error?)
+    }
     Mat4 parentTransform;
     getAnimatedNodeTransform(parentTransform, animation, animationTime, staticBone.parentID);
 
@@ -122,6 +139,11 @@ extern "C"
 
 void getSingleAnimation(Mat4* rslBuffer, Animation* animation, ModelData* model, float animationTime)
 {
+    if (rslBuffer == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+    if (animation == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+    if (model == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+    if (model->boneOffsets == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+
     for (uint32_t idx = 0u; idx < model->numBones; idx++)
     {
         Mat4 animatedTransform;

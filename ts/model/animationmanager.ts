@@ -43,4 +43,6 @@ export abstract class AnimationManager {
      *  (for WASM, do not include the size of the entire heap)
      */
     public abstract getRestingMemoryUsage(): number;
+
+    public abstract load(): Promise<boolean>;
 }

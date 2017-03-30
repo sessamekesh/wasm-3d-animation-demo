@@ -11,6 +11,9 @@ import {ModelData} from '../render/program/animatedentityprogram';
 export class SpeedyWASMAnimationManager extends AnimationManager {
     constructor() { super(); }
 
+    public load() {
+        return Promise.resolve(true);
+    }
     public registerAnimation(animation: Animation): void {
         throw new Error('Method not implemented.');
     }

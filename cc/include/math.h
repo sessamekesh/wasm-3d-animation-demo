@@ -206,32 +206,28 @@ struct Animation
     AnimatedBone* animatedBones;
 };
 
-bool getAnimatedBone(AnimatedBone& o, const Animation& animation, uint32_t ID)
+bool getStaticBone(StaticBone& o, const Animation& animation, uint32_t ID)
 {
-    // Binary search for the animated bone in the selection
-    uint32_t start = 0u;
-    uint32_t end = animation.numAnimatedBones - 1u;
-
-    if (ID < animation.animatedBones[0].ID) return false;
-    if (ID > animation.animatedBones[animation.numAnimatedBones - 1u].ID) return false;
-
-    while (end - start >= 1u)
+    for (uint32_t i = 0u; i < animation.numStaticBones; i++)
     {
-        uint32_t mid = (start + end) / 2u;
-        if (animation.animatedBones[mid].ID == ID)
+        if (animation.staticBones[i].ID == ID)
         {
-            o = animation.animatedBones[mid];
+            o = animation.staticBones[i];
             return true;
         }
-        else if (animation.animatedBones[mid].ID < ID)
+    }
+    return false;
+}
+
+bool getAnimatedBone(AnimatedBone& o, const Animation& animation, uint32_t ID)
+{
+    for (uint32_t i = 0u; i < animation.numAnimatedBones; i++)
+    {
+        if (animation.animatedBones[i].ID == ID)
         {
-            mid = start + 1u;
-        }
-        else
-        {
-            mid = end - 1u;
+            o = animation.animatedBones[i];
+            return true;
         }
     }
-
     return false;
 }

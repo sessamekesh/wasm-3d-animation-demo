@@ -6,8 +6,6 @@ import {Mat4} from '../math/mat4';
 import {Quaternion} from '../math/quaternion';
 import {Vec3} from '../math/vec3';
 
-// TODO SESS: Implement this
-
 /**
  * The Naive JS Animation Manager re-does all the work upon every request to figure out the animation data.
  *  Registering an animation does absolutely nothing.
@@ -20,6 +18,10 @@ import {Vec3} from '../math/vec3';
  */
 export class NaiveJSAnimationManager extends AnimationManager {
     constructor() { super(); }
+
+    public load(): Promise<boolean> {
+        return Promise.resolve(true); // No loading required
+    }
 
     public registerAnimation(animation: Animation): void {
         // No-op for naive system

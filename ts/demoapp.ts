@@ -47,16 +47,38 @@ class Demo {
     constructor() {}
 
     public CreateAndStart(canvas: HTMLCanvasElement) {
+        let animationManagerType: string = getParameterByName('system') || 'default';
+        if (['naivejs', 'speedyjs', 'naivewasm', 'speedywasm'].indexOf(animationManagerType) == -1) {
+            animationManagerType = 'naivejs';
+        }
+
+        let animationManager: AnimationManager;
+        switch (animationManagerType)
+        {
+            case 'speedyjs': animationManager = new SpeedyJSAnimationManager(); break;
+            case 'naivewasm': animationManager = new NaiveWASMAnimationManager(); break;
+            case 'speedywasm': animationManager = new SpeedyWASMAnimationManager(); break;
+            default: animationManager = new NaiveJSAnimationManager();
+        }
+
         Promise.all([
             getModelData(),
             getAnimationData(ANIMATIONS.RUN),
             getAnimationData(ANIMATIONS.SAMBA),
             getAnimationData(ANIMATIONS.TUT),
-            getAnimationData(ANIMATIONS.WAVE)
-        ]).then((stuff) => {this.start(canvas, stuff[0], stuff[1], [stuff[2], stuff[3], stuff[4]])});
+            getAnimationData(ANIMATIONS.WAVE),
+            animationManager.load()
+        ]).then((stuff) => {
+            if (!stuff[5]) {
+                debugger;
+                throw new Error('Could not instantiate system!');
+            }
+            this.start(canvas, stuff[0], stuff[1], [stuff[2], stuff[3], stuff[4]], animationManager)
+        })
+        .catch((e) => alert(e));
     }
 
-    protected start(canvas: HTMLCanvasElement, betaModelData: ModelData[], betaRun: Animation, betaDances: Animation[]) {
+    protected start(canvas: HTMLCanvasElement, betaModelData: ModelData[], betaRun: Animation, betaDances: Animation[], animationManager: AnimationManager) {
         // With everything loaded, start opening up the screen
         document.body.className += " loaded";
 
@@ -89,33 +111,19 @@ class Demo {
         const DISTANCE_TO_TRAVEL = END_POS.sub(START_POS).length();
         const EACH_OFFSET = new Vec3(175, 0, 0);
 
-        let animationManagerType: string = getParameterByName('system') || 'default';
-        if (['naivejs', 'speedyjs', 'naivewasm', 'speedywasm'].indexOf(animationManagerType) == -1) {
-            animationManagerType = 'naivejs';
-        }
+        // Register animations (must happen first)
+        animationManager.registerAnimation(betaRun);
+        betaDances.forEach((dance) => animationManager.registerAnimation(dance));
 
-        let animationManager: AnimationManager;
-        switch (animationManagerType)
-        {
-            case 'speedyjs': animationManager = new SpeedyJSAnimationManager(); break;
-            case 'naivewasm': animationManager = new NaiveWASMAnimationManager(); break;
-            case 'speedywasm': animationManager = new SpeedyWASMAnimationManager(); break;
-            default: animationManager = new NaiveJSAnimationManager();
-        }
-
-        const ANIMATION_MANAGER = animationManager;
-
-        // Perform associations...
-        betaModelData.forEach((model) => ANIMATION_MANAGER.registerModel(model));
-        ANIMATION_MANAGER.registerAnimation(betaRun);
+        // Register models and perform associations
+        betaModelData.forEach((model) => animationManager.registerModel(model));
         betaModelData.forEach((model) => {
-            if (!ANIMATION_MANAGER.associateModelAndAnimation(betaRun, model)) {
+            if (!animationManager.associateModelAndAnimation(betaRun, model)) {
                 console.error('Error - model', model, 'and animation', betaRun, 'cannot be associated!');
             }
         });
-        betaDances.forEach((dance) => ANIMATION_MANAGER.registerAnimation(dance));
         betaDances.forEach((dance) => betaModelData.forEach((model) => {
-            if (!ANIMATION_MANAGER.associateModelAndAnimation(dance, model)) {
+            if (!animationManager.associateModelAndAnimation(dance, model)) {
                 console.error('Error - model', model, 'and animation', betaRun, 'cannot be associated!');
             };
         }));
@@ -128,7 +136,7 @@ class Demo {
             runners.push(CreateRandomDancingEntity(
                 betaRun,
                 betaDances,
-                ANIMATION_MANAGER,
+                animationManager,
                 DISTANCE_TO_TRAVEL,
                 VELOCITY, {
                     minStartRunTime: getCachedParameterByName('minstartruntime', undefined),
@@ -212,7 +220,7 @@ class Demo {
             for (let i = 0; i < runners.length; i++) {
                 runners[i].update(dt);
                 if (runners[i].isFinished()) {
-                    runners[i] = CreateRandomDancingEntity(betaRun, betaDances, ANIMATION_MANAGER, DISTANCE_TO_TRAVEL, VELOCITY);
+                    runners[i] = CreateRandomDancingEntity(betaRun, betaDances, animationManager, DISTANCE_TO_TRAVEL, VELOCITY);
                 }
             }
 
