@@ -9,7 +9,7 @@ import {Quaternion} from '../math/quaternion';
 // Size of primitives
 const UINT_SIZE = 4;
 const FLOAT_SIZE = 4;
-const MAT4_SIZE = 4 * FLOAT_SIZE;
+const MAT4_SIZE = 16 * FLOAT_SIZE;
 const STATIC_BONE_SIZE = 2 * UINT_SIZE + MAT4_SIZE;
 const VEC3_SIZE = 3 * FLOAT_SIZE;
 const QUAT_SIZE = 4 * FLOAT_SIZE;
@@ -35,7 +35,20 @@ export class NaiveWASMAnimationManager extends AnimationManager {
     private wasmModule: WASMModule|null = null;
     private exports: any = null;
     private memory: WebAssembly.Memory|null = null;
-    private nextMemoryOpen: number = 4; // Where is the next available memory chunk? Notice my paranoia at not starting at 0 ;-)
+
+    // Keep a pointer to the next available heap memory
+    // In compilation C++ -> WASM, I noticed that what would be expected to be stack allocations
+    //  were being treated as such - e.g.:
+    // 
+    // int a;
+    // int b; // &b = &a + sizeof(int)
+    //
+    // However, when memory was then written, it was being written to the same heap memory
+    //  contained in this.memory. To mitigate this problem, I've given the WASM code a 1MB "stack".
+    //  of heap memory that will not be addressed with this JS malloc implementation.
+    // This is not a general purpose solution, and will NOT fail gracefully in the case of a stack overflow!
+    // Fun fact: googling "webassembly stack overflow" is exceptionally not helpful.
+    private nextMemoryOpen: number = 1024 * 1024; // Where is the next available memory chunk? Notice my paranoia at not starting at 0 ;-)
 
     constructor() { super(); this.boneIds.set('RootNode', 0); this.nextBoneId = 1; }
 
@@ -50,7 +63,7 @@ export class NaiveWASMAnimationManager extends AnimationManager {
             .then((response) => response.arrayBuffer())
             .then((bytes) => WebAssembly.compile(bytes))
             .then((wasmModule: WASMModule) => {
-                this.memory = new WebAssembly.Memory({ initial: 256 });
+                this.memory = new WebAssembly.Memory({ initial: 512 });
                 const imports = {
                     env: {
                         memoryBase: 0,
@@ -235,10 +248,10 @@ export class NaiveWASMAnimationManager extends AnimationManager {
 
         var pAnimationData = this.malloc(FLOAT_SIZE + UINT_SIZE * 4);
 
-        var animationFloatView = new Float32Array(this.memory.buffer, pAnimationData, FLOAT_SIZE);
+        var animationFloatView = new Float32Array(this.memory.buffer, pAnimationData, 1);
         animationFloatView[0] = animation.duration;
         
-        var animationUintView = new Uint32Array(this.memory.buffer, pAnimationData + FLOAT_SIZE, UINT_SIZE * 4);
+        var animationUintView = new Uint32Array(this.memory.buffer, pAnimationData + FLOAT_SIZE, 4);
         animationUintView[0] = animation.staticBones.size;
         animationUintView[2] = animation.animatedBones.size;
 
@@ -247,6 +260,8 @@ export class NaiveWASMAnimationManager extends AnimationManager {
         var idx = 0;
         animation.staticBones.forEach((bone, name) => {
             if (!this.memory) return; // For TS type safety, grumble grumble...
+            if (!this.boneIds.has(name)) { console.error('Bone IDs array does not have bone', name, 'in create static bones'); }
+            if (!this.boneIds.has(bone.parent || 'RootNode')) { console.error('Bone IDs array does not have parent node', bone.parent); };
 
             var uintView = new Uint32Array(this.memory.buffer, pStaticBones + idx * STATIC_BONE_SIZE, UINT_SIZE * 2);
             var floatView = new Float32Array(this.memory.buffer, pStaticBones + idx * STATIC_BONE_SIZE + UINT_SIZE * 2, MAT4_SIZE);

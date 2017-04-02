@@ -7,7 +7,7 @@ declare class Stats {
 
 	REVISION: number;
 
-	domElement: HTMLDivElement;
+	dom: HTMLDivElement;
 	
 	// 0: fps, 1: ms
 	showPanel(value: number): void;

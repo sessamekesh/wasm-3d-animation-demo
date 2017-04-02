@@ -167,11 +167,10 @@ class Demo {
             program.disengage(gl);
         });
         let stats = new Stats();
-        stats.showPanel(1);
         let animationTimePanel = stats.addPanel(new Stats.Panel('AnimationTime', '#f8f', '#212'));
-        stats.showPanel(3);
+        stats.showPanel(1);
 
-        document.body.appendChild(stats.domElement);
+        document.body.appendChild(stats.dom);
 
         //
         // Make the GL resources

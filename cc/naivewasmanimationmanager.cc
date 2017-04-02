@@ -102,7 +102,7 @@ void getTransformAtTime(Mat4& o_rsl, const AnimatedBone& bone, float time)
     setRotationTranslationScale(o_rsl, rot, pos, scl);
 }
 
-void getAnimatedNodeTransform(Mat4& o, const Animation& animation, float animationTime, uint32_t id)
+void getAnimatedNodeTransform(Mat4& o, const Animation& animation, float animationTime, const uint32_t id)
 {
     if (id == 0)
     {
@@ -114,7 +114,7 @@ void getAnimatedNodeTransform(Mat4& o, const Animation& animation, float animati
     if (!getStaticBone(staticBone, animation, id))
     {
         alertError(ERR_NOTFOUND, __LINE__, id);
-        return; // TODO SESS: Fail more obviously here (leave a console log with the error?)
+        return;
     }
     Mat4 parentTransform;
     getAnimatedNodeTransform(parentTransform, animation, animationTime, staticBone.parentID);
