@@ -70,7 +70,6 @@ class Demo {
             animationManager.load()
         ]).then((stuff) => {
             if (!stuff[5]) {
-                debugger;
                 throw new Error('Could not instantiate system!');
             }
             this.start(canvas, stuff[0], stuff[1], [stuff[2], stuff[3], stuff[4]], animationManager)
@@ -185,6 +184,8 @@ class Demo {
             new Vec3(-1, -3, -0.7).setNormal()
         ));
         program.disengage(gl);
+
+        let r = animationManager.getSingleAnimation(betaRun, calls[1].modelData, 0);
 
         let lastFrame = performance.now();
         let thisFrame: number;

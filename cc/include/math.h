@@ -142,7 +142,7 @@ void m4mul(Mat4& o, const Mat4& a, const Mat4& b)
             o.m[row * 4u + col] = 0.f;
             for (uint8_t k = 0u; k < 4u; k++)
             {
-                o.m[row * 4 + col] += b.m[row * 4 + k] * a.m[k * 4 + col];
+                o.m[row * 4u + col] += b.m[row * 4u + k] * a.m[k * 4u + col];
             }
         }
     }

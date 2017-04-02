@@ -75,7 +75,6 @@ export class NaiveWASMAnimationManager extends AnimationManager {
                         _sinf: Math.sin,
                         _fmodf: (a: number, b: number) => { return a % b; },
                         _alertError: (code: number, line: number, extra: number) => {
-                            debugger;
                             console.error(errCodes.get(code) || '', ' ON LINE ', line, ' EXTRA:: ', extra);
                         }
                     }
@@ -102,7 +101,7 @@ export class NaiveWASMAnimationManager extends AnimationManager {
 
         
         this.registerBones(animation);
-        let pAnimationAddress = this.createAnimationData(animation);
+        var pAnimationAddress = this.createAnimationData(animation);
         this.animationAddresses.set(animation, pAnimationAddress);
     }
     public registerModel(model: ModelData): void {
@@ -117,7 +116,7 @@ export class NaiveWASMAnimationManager extends AnimationManager {
         }
 
         
-        let pModelAddress = this.createModelData(model);
+        var pModelAddress = this.createModelData(model);
         this.modelAddresses.set(model, pModelAddress);
     }
     public associateModelAndAnimation(animation: Animation, model: ModelData): boolean {
@@ -149,7 +148,7 @@ export class NaiveWASMAnimationManager extends AnimationManager {
             return new AnimationResult(new Float32Array([]), 0);
         }
 
-        let rsl = new Float32Array(this.memory.buffer, this.nextMemoryOpen, MAT4_SIZE * model.boneNames.length / FLOAT_SIZE);
+        var rsl = new Float32Array(this.memory.buffer, this.nextMemoryOpen, MAT4_SIZE * model.boneNames.length / FLOAT_SIZE);
         this.exports._getSingleAnimation(this.nextMemoryOpen, this.animationAddresses.get(animation), this.modelAddresses.get(model), animationTime);
 
         return new AnimationResult(
@@ -175,7 +174,6 @@ export class NaiveWASMAnimationManager extends AnimationManager {
 
     private createModelData(model: ModelData): number {
         if (!this.memory) {
-            debugger;
             console.error('Could not serialize model data, WASM module not initialized');
             return 0;
         }
@@ -188,7 +186,7 @@ export class NaiveWASMAnimationManager extends AnimationManager {
         // set boneIds array
         var pBoneIds = this.malloc(model.boneNames.length * UINT_SIZE);
         var boneView = new Uint32Array(this.memory.buffer, pBoneIds, model.boneNames.length * UINT_SIZE);
-        for (let idx = 0; idx < model.boneNames.length; idx++) {
+        for (var idx = 0; idx < model.boneNames.length; idx++) {
             if (!this.boneIds.has(model.boneNames[idx])) {
                 throw new Error(`ERROR - Tried to serialize model data, could not get bone for ${model.boneNames[idx]}`);
             }
@@ -200,7 +198,7 @@ export class NaiveWASMAnimationManager extends AnimationManager {
         // set boneOffsets
         var pBoneOffsets = this.malloc(model.boneNames.length * MAT4_SIZE);
         var offsetsView = new Float32Array(this.memory.buffer, pBoneOffsets, model.boneNames.length * MAT4_SIZE);
-        for (let idx = 0; idx < model.boneNames.length; idx++) {
+        for (var idx = 0; idx < model.boneNames.length; idx++) {
             offsetsView.set(this.serializeMat4(model.boneOffsets[idx]), idx * 16);
         }
         uintView[2] = pBoneOffsets;
@@ -227,7 +225,6 @@ export class NaiveWASMAnimationManager extends AnimationManager {
 
     private createAnimationData(animation: Animation): number {
         if (!this.memory) {
-            debugger;
             console.error('Cannot create animation data, WASM module not initialized');
             return 0;
         }
@@ -276,7 +273,7 @@ export class NaiveWASMAnimationManager extends AnimationManager {
         animation.animatedBones.forEach((bone, name) => {
             if (!this.memory) return; // For TS type safety, grumble grumble...
 
-            var uintView = new Uint32Array(this.memory.buffer, pAnimatedBones + idx * ANIMATED_BONE_SIZE, ANIMATED_BONE_SIZE);
+            var uintView = new Uint32Array(this.memory.buffer, pAnimatedBones + idx * ANIMATED_BONE_SIZE, ANIMATED_BONE_SIZE / UINT_SIZE);
             uintView[0] = this.boneIds.get(name) || 0;
             uintView[1] = bone.positionChannel.length;
             uintView[3] = bone.rotationChannel.length;
@@ -284,24 +281,24 @@ export class NaiveWASMAnimationManager extends AnimationManager {
 
             // set positionChannel
             var pPositionChannel = this.malloc(bone.positionChannel.length * POSITION_KEYFRAME_SIZE);
-            for (let pidx = 0; pidx < bone.positionChannel.length; pidx++) {
-                let view = new Float32Array(this.memory.buffer, pPositionChannel + pidx * POSITION_KEYFRAME_SIZE, POSITION_KEYFRAME_SIZE);
+            for (var pidx = 0; pidx < bone.positionChannel.length; pidx++) {
+                var view = new Float32Array(this.memory.buffer, pPositionChannel + pidx * POSITION_KEYFRAME_SIZE, POSITION_KEYFRAME_SIZE / FLOAT_SIZE);
                 view[0] = bone.positionChannel[pidx].time;
                 view.set(bone.positionChannel[pidx].position.data, 1);
             }
 
             // set rotationChannel
             var pRotationChannel = this.malloc(bone.rotationChannel.length * ROTATION_KEYFRAME_SIZE);
-            for (let ridx = 0; ridx < bone.rotationChannel.length; ridx++) {
-                let view = new Float32Array(this.memory.buffer, pRotationChannel + ridx * ROTATION_KEYFRAME_SIZE, ROTATION_KEYFRAME_SIZE);
+            for (var ridx = 0; ridx < bone.rotationChannel.length; ridx++) {
+                var view = new Float32Array(this.memory.buffer, pRotationChannel + ridx * ROTATION_KEYFRAME_SIZE, ROTATION_KEYFRAME_SIZE / FLOAT_SIZE);
                 view[0] = bone.rotationChannel[ridx].time;
                 view.set(this.serializeQuat(bone.rotationChannel[ridx].rotation), 1);
             }
 
             // set scaleChannel
             var pScaleChannel = this.malloc(bone.scalingChannel.length * SCALING_KEYFRAME_SIZE);
-            for (let sidx = 0; sidx < bone.scalingChannel.length; sidx++) {
-                let view = new Float32Array(this.memory.buffer, pScaleChannel + sidx * SCALING_KEYFRAME_SIZE, SCALING_KEYFRAME_SIZE);
+            for (var sidx = 0; sidx < bone.scalingChannel.length; sidx++) {
+                var view = new Float32Array(this.memory.buffer, pScaleChannel + sidx * SCALING_KEYFRAME_SIZE, SCALING_KEYFRAME_SIZE / FLOAT_SIZE);
                 view[0] = bone.scalingChannel[sidx].time;
                 view.set(bone.scalingChannel[sidx].scale.data, 1);
             }
@@ -309,6 +306,8 @@ export class NaiveWASMAnimationManager extends AnimationManager {
             uintView[2] = pPositionChannel;
             uintView[4] = pRotationChannel;
             uintView[6] = pScaleChannel;
+
+            idx++;
         });
         animationUintView[3] = pAnimatedBones;
 
