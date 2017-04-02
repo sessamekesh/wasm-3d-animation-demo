@@ -134,9 +134,6 @@ export class NaiveWASMAnimationManager extends AnimationManager {
         return true;
     }
     public getSingleAnimation(animation: Animation, model: ModelData, animationTime: number): AnimationResult {
-        var me = this; // EWWWWW GROSS GET RID OF IT
-        // TODO KAM: Debug why this is breaking. After we see why it breaks, we can start hunting down logic errors.
-
         if (!this.memory || !this.exports) {
             console.error('Could not register animation with naive WASM system, because system is not loaded yet!');
             return new AnimationResult(new Float32Array([]), 0);
@@ -152,7 +149,7 @@ export class NaiveWASMAnimationManager extends AnimationManager {
             return new AnimationResult(new Float32Array([]), 0);
         }
 
-        let rsl = new Float32Array(this.memory.buffer, this.nextMemoryOpen, MAT4_SIZE);
+        let rsl = new Float32Array(this.memory.buffer, this.nextMemoryOpen, MAT4_SIZE * model.boneNames.length / FLOAT_SIZE);
         this.exports._getSingleAnimation(this.nextMemoryOpen, this.animationAddresses.get(animation), this.modelAddresses.get(model), animationTime);
 
         return new AnimationResult(
