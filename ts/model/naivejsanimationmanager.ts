@@ -125,11 +125,17 @@ export class NaiveJSAnimationManager extends AnimationManager {
             if (posTime < 0) posTime = posTime + bone.positionChannel[bone.positionChannel.length - 1].time;
 
             var idx = 0;
-            while ((idx < bone.positionChannel.length - 1)
-                && (bone.positionChannel[idx].time <= posTime)
-                && (bone.positionChannel[idx + 1].time <= posTime)
-            ) {
-                idx++;
+            var low = 0;
+            var high = bone.positionChannel.length - 1;
+            while (low < high) {
+                idx = Math.floor((low + high) / 2);
+                if (bone.positionChannel[idx + 1].time <= posTime) {
+                    low = idx + 1;
+                } else if (bone.positionChannel[idx].time >= posTime) {
+                    high = idx - 1;
+                } else {
+                    break;
+                }
             }
 
             var ratio = (posTime - bone.positionChannel[idx].time) / (bone.positionChannel[idx + 1].time - bone.positionChannel[idx].time);
@@ -145,11 +151,17 @@ export class NaiveJSAnimationManager extends AnimationManager {
             if (rotTime < 0) rotTime = rotTime + bone.rotationChannel[bone.rotationChannel.length - 1].time;
 
             var idx = 0;
-            while ((idx < bone.rotationChannel.length - 1)
-                && (bone.rotationChannel[idx].time <= rotTime)
-                && (bone.rotationChannel[idx + 1].time <= rotTime)
-            ) {
-                idx++;
+            var low = 0;
+            var high = bone.rotationChannel.length - 1;
+            while (low < high) {
+                idx = Math.floor((low + high) / 2);
+                if (bone.rotationChannel[idx + 1].time <= rotTime) {
+                    low = idx + 1;
+                } else if (bone.rotationChannel[idx].time >= rotTime) {
+                    high = idx - 1;
+                } else {
+                    break;
+                }
             }
 
             var ratio = (rotTime - bone.rotationChannel[idx].time) / (bone.rotationChannel[idx + 1].time - bone.rotationChannel[idx].time);
@@ -165,11 +177,17 @@ export class NaiveJSAnimationManager extends AnimationManager {
             if (sclTime < 0) sclTime = sclTime + bone.scalingChannel[bone.scalingChannel.length - 1].time;
 
             var idx = 0;
-            while ((idx < bone.scalingChannel.length - 1)
-                && (bone.scalingChannel[idx].time <= sclTime)
-                && (bone.scalingChannel[idx + 1].time <= sclTime)
-            ) {
-                idx++;
+            var low = 0;
+            var high = bone.scalingChannel.length - 1;
+            while (low < high) {
+                idx = Math.floor((low + high) / 2);
+                if (bone.scalingChannel[idx + 1].time <= sclTime) {
+                    low = idx + 1;
+                } else if (bone.scalingChannel[idx].time >= sclTime) {
+                    high = idx - 1;
+                } else {
+                    break;
+                }
             }
 
             var ratio = (sclTime - bone.scalingChannel[idx].time) / (bone.scalingChannel[idx + 1].time - bone.scalingChannel[idx].time);

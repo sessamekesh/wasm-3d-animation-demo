@@ -41,11 +41,23 @@ void getTransformAtTime(Mat4& o_rsl, const AnimatedBone& bone, float time)
         if (posTime < 0.f) posTime = posTime + bone.positionChannel[bone.nPositionKeyframes - 1u].time;
 
         std::uint32_t idx = 0u;
-        while ((idx < bone.nPositionKeyframes - 1u)
-            && (bone.positionChannel[idx].time <= posTime)
-            && (bone.positionChannel[idx + 1u].time <= posTime))
+        std::uint32_t low = 0u;
+        std::uint32_t high = bone.nPositionKeyframes - 1u;
+        while (low < high)
         {
-            ++idx;
+            idx = (low + high) / 2u;
+            if (bone.positionChannel[idx + 1u].time <= posTime)
+            {
+                low = idx + 1u;
+            }
+            else if (bone.positionChannel[idx].time >= posTime)
+            {
+                high = idx - 1u;
+            }
+            else
+            {
+                break;
+            }
         }
 
         float ratio = (posTime - bone.positionChannel[idx].time) / (bone.positionChannel[idx + 1u].time - bone.positionChannel[idx].time);
@@ -64,11 +76,23 @@ void getTransformAtTime(Mat4& o_rsl, const AnimatedBone& bone, float time)
         if (rotTime < 0.f) rotTime = rotTime + bone.rotationChannel[bone.nRotationKeyframes - 1u].time;
 
         std::uint32_t idx = 0u;
-        while ((idx < bone.nRotationKeyframes - 1u)
-            && (bone.rotationChannel[idx].time <= rotTime)
-            && (bone.rotationChannel[idx + 1u].time <= rotTime))
+        std::uint32_t low = 0u;
+        std::uint32_t high = bone.nRotationKeyframes - 1u;
+        while (low < high)
         {
-            ++idx;
+            idx = (low + high) / 2u;
+            if (bone.rotationChannel[idx + 1u].time <= rotTime)
+            {
+                low = idx + 1u;
+            }
+            else if (bone.rotationChannel[idx].time >= rotTime)
+            {
+                high = idx - 1u;
+            }
+            else
+            {
+                break;
+            }
         }
 
         float ratio = (rotTime - bone.rotationChannel[idx].time) / (bone.rotationChannel[idx + 1u].time - bone.rotationChannel[idx].time);
@@ -87,11 +111,23 @@ void getTransformAtTime(Mat4& o_rsl, const AnimatedBone& bone, float time)
         if (sclTime < 0.f) sclTime = sclTime + bone.scalingChannel[bone.nScalingKeyframes - 1u].time;
 
         std::uint32_t idx = 0u;
-        while ((idx < bone.nScalingKeyframes - 1u)
-            && (bone.scalingChannel[idx].time <= sclTime)
-            && (bone.scalingChannel[idx + 1u].time <= sclTime))
+        std::uint32_t low = 0u;
+        std::uint32_t high = bone.nScalingKeyframes - 1u;
+        while (low < high)
         {
-            ++idx;
+            idx = (low + high) / 2u;
+            if (bone.scalingChannel[idx + 1u].time <= sclTime)
+            {
+                low = idx + 1u;
+            }
+            else if (bone.scalingChannel[idx].time >= sclTime)
+            {
+                high = idx - 1u;
+            }
+            else
+            {
+                break;
+            }
         }
 
         float ratio = (sclTime - bone.scalingChannel[idx].time) / (bone.scalingChannel[idx + 1u].time - bone.scalingChannel[idx].time);

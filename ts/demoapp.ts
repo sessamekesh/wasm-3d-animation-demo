@@ -166,8 +166,8 @@ class Demo {
             program.disengage(gl);
         });
         let stats = new Stats();
-        let animationTimePanel = stats.addPanel(new Stats.Panel('AnimationTime', '#f8f', '#212'));
-        stats.showPanel(1);
+        let animationTimePanel = stats.addPanel(new Stats.Panel('Anim', '#f8f', '#212'));
+        stats.showPanel(3);
 
         document.body.appendChild(stats.dom);
 
@@ -247,7 +247,7 @@ class Demo {
                     program.renderObject(gl, calls[j], animationData.boneData);
                 }
             }
-            animationTimePanel.update(sum, 8.5 * runners.length);
+            animationTimePanel.update(sum, 25 * runners.length);
 
             program.disengage(gl);
 

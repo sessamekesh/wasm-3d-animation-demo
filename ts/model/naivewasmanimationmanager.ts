@@ -156,8 +156,17 @@ export class NaiveWASMAnimationManager extends AnimationManager {
         );
     }
     public getBlendedAnimation(animations: [Animation, Animation], model: ModelData, animationTimes: [number, number], blendFactor: number): AnimationResult {
-        // TODO SESS: Not this.
-        return this.getSingleAnimation(animations[0], model, animationTimes[0]);
+        if (!this.memory) return new AnimationResult(new Float32Array([]), 0);
+        this.exports._getBlendedAnimation(
+            this.nextMemoryOpen,
+            this.animationAddresses.get(animations[0]),
+            this.animationAddresses.get(animations[1]),
+            this.modelAddresses.get(model),
+            animationTimes[0],
+            animationTimes[1],
+            blendFactor
+        );
+        return new AnimationResult(new Float32Array(this.memory.buffer, this.nextMemoryOpen, MAT4_SIZE * model.boneNames.length / FLOAT_SIZE), 0);
     }
     public getRestingMemoryUsage(): number {
         return this.nextMemoryOpen; // How much extra memory for copying everything over to c structures?
