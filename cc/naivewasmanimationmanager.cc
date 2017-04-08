@@ -48,7 +48,7 @@ void getTransformAtTime(Mat4& o_rsl, const AnimatedBone& bone, float time)
             ++idx;
         }
 
-        float ratio = (posTime - bone.positionChannel[idx].time) / (bone.positionChannel[idx].time - bone.positionChannel[idx + 1].time);
+        float ratio = (posTime - bone.positionChannel[idx].time) / (bone.positionChannel[idx + 1u].time - bone.positionChannel[idx].time);
 
         vlerp(pos, bone.positionChannel[idx].pos, bone.positionChannel[idx + 1u].pos, ratio);
     }
@@ -71,7 +71,7 @@ void getTransformAtTime(Mat4& o_rsl, const AnimatedBone& bone, float time)
             ++idx;
         }
 
-        float ratio = (rotTime - bone.rotationChannel[idx].time) / (bone.rotationChannel[idx].time - bone.rotationChannel[idx + 1].time);
+        float ratio = (rotTime - bone.rotationChannel[idx].time) / (bone.rotationChannel[idx + 1u].time - bone.rotationChannel[idx].time);
 
         qslerp(rot, bone.rotationChannel[idx].rot, bone.rotationChannel[idx + 1u].rot, ratio);
     }
@@ -94,7 +94,7 @@ void getTransformAtTime(Mat4& o_rsl, const AnimatedBone& bone, float time)
             ++idx;
         }
 
-        float ratio = (sclTime - bone.scalingChannel[idx].time) / (bone.scalingChannel[idx].time - bone.scalingChannel[idx + 1].time);
+        float ratio = (sclTime - bone.scalingChannel[idx].time) / (bone.scalingChannel[idx + 1u].time - bone.scalingChannel[idx].time);
 
         vlerp(scl, bone.scalingChannel[idx].scl, bone.scalingChannel[idx + 1u].scl, ratio);
     }

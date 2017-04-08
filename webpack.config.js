@@ -1,7 +1,7 @@
 module.exports = {
-    entry: './ts/demoapp.ts',
+    entry: { demoapp: './ts/demoapp.ts', outputtest: './ts/outputtest.ts' },
     output: {
-        filename: 'demoapp.js',
+        filename: '[name].js',
         path: __dirname + '/webroot/'
     },
     module: {

@@ -3,3 +3,4 @@ node_modules
 webroot/*.js
 js
 assets
+naive.wasm

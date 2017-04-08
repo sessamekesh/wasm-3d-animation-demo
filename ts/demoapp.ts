@@ -96,7 +96,7 @@ class Demo {
         );
 
         let projMatrix = new Mat4().perspective(
-            Math.PI * 0.45,
+            Math.PI * 0.6,
             gl.canvas.clientWidth / gl.canvas.clientHeight,
             0.1,
             2000.0
@@ -149,7 +149,7 @@ class Demo {
             if (!gl) return; 
 
             projMatrix = new Mat4().perspective(
-                Math.PI * 0.65,
+                Math.PI * 0.6,
                 gl.canvas.clientWidth / gl.canvas.clientHeight,
                 0.1,
                 2000.0
