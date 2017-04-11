@@ -190,6 +190,12 @@ void getSingleAnimation(Mat4* rslBuffer, Animation* animation, ModelData* model,
 
 void getBlendedAnimation(Mat4* rslBuffer, Animation* a1, Animation* a2, ModelData* model, float t1, float t2, float blendFactor)
 {
+    if (rslBuffer == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+    if (a1 == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+    if (a2 == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+    if (model == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+    if (model->boneOffsets == 0) { alertError(ERR_NULLPTR, __LINE__, 0); return; }
+
     for (uint32_t idx = 0u; idx < model->numBones; idx++)
     {
         Mat4 a1t, a2t;
