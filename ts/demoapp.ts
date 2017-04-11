@@ -16,11 +16,10 @@ import {CreateRandomDancingEntity, Entity} from './model/dancingentity';
 import {AnimationManager} from './model/animationmanager';
 import {NaiveJSAnimationManager} from './model/naivejsanimationmanager';
 import {NaiveWASMAnimationManager} from './model/naivewasmanimationmanager';
-import {SpeedyJSAnimationManager} from './model/speedyjsanimationmanager';
-import {SpeedyWASMAnimationManager} from './model/speedywasmanimationmanager';
 
-// TODO SESS: Add stats https://github.com/mrdoob/stats.js/
+import {GUI, SystemType} from './settingsgui';
 
+// http://stackoverflow.com/a/901144 by user jolly.exe
 function getParameterByName(name: string, url?: string): string|null {
     if (!url) {
       url = window.location.href;
@@ -52,14 +51,8 @@ class Demo {
             animationManagerType = 'naivejs';
         }
 
-        let animationManager: AnimationManager;
-        switch (animationManagerType)
-        {
-            case 'speedyjs': animationManager = new SpeedyJSAnimationManager(); break;
-            case 'naivewasm': animationManager = new NaiveWASMAnimationManager(); break;
-            case 'speedywasm': animationManager = new SpeedyWASMAnimationManager(); break;
-            default: animationManager = new NaiveJSAnimationManager();
-        }
+        let wasmAnimationManager = new NaiveWASMAnimationManager();
+        let jsAnimationManager = new NaiveJSAnimationManager();
 
         Promise.all([
             getModelData(),
@@ -67,24 +60,28 @@ class Demo {
             getAnimationData(ANIMATIONS.SAMBA),
             getAnimationData(ANIMATIONS.TUT),
             getAnimationData(ANIMATIONS.WAVE),
-            animationManager.load()
+            wasmAnimationManager.load(),
+            jsAnimationManager.load()
         ]).then((stuff) => {
             if (!stuff[5]) {
                 throw new Error('Could not instantiate system!');
             }
-            this.start(canvas, stuff[0], stuff[1], [stuff[2], stuff[3], stuff[4]], animationManager)
+            this.start(canvas, stuff[0], stuff[1], [stuff[2], stuff[3], stuff[4]], jsAnimationManager, wasmAnimationManager)
         })
         .catch((e) => alert(e));
     }
 
-    protected start(canvas: HTMLCanvasElement, betaModelData: ModelData[], betaRun: Animation, betaDances: Animation[], animationManager: AnimationManager) {
+    protected start(canvas: HTMLCanvasElement, betaModelData: ModelData[], betaRun: Animation, betaDances: Animation[], jsAnimationManager: NaiveJSAnimationManager, wasmAnimationManager: NaiveWASMAnimationManager) {
         // With everything loaded, start opening up the screen
         document.body.className += " loaded";
 
-        let gl = canvas.getContext('webgl');
+        let gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
         if (!gl) {
             return console.error('Could not create WebGL rendering context!');
         }
+
+        var activeAnimationManager:AnimationManager = jsAnimationManager;
+        let gui = new GUI();
 
         //
         // Set up the model
@@ -111,39 +108,66 @@ class Demo {
         const EACH_OFFSET = new Vec3(175, 0, 0);
 
         // Register animations (must happen first)
-        animationManager.registerAnimation(betaRun);
-        betaDances.forEach((dance) => animationManager.registerAnimation(dance));
+        jsAnimationManager.registerAnimation(betaRun);
+        wasmAnimationManager.registerAnimation(betaRun);
+        betaDances.forEach((dance) =>{
+            jsAnimationManager.registerAnimation(dance);
+            wasmAnimationManager.registerAnimation(dance);
+        });
 
         // Register models and perform associations
-        betaModelData.forEach((model) => animationManager.registerModel(model));
         betaModelData.forEach((model) => {
-            if (!animationManager.associateModelAndAnimation(betaRun, model)) {
+            jsAnimationManager.registerModel(model)
+            wasmAnimationManager.registerModel(model);
+        });
+        betaModelData.forEach((model) => {
+            if (!jsAnimationManager.associateModelAndAnimation(betaRun, model) || !wasmAnimationManager.associateModelAndAnimation(betaRun, model)) {
                 console.error('Error - model', model, 'and animation', betaRun, 'cannot be associated!');
             }
         });
         betaDances.forEach((dance) => betaModelData.forEach((model) => {
-            if (!animationManager.associateModelAndAnimation(dance, model)) {
+            if (!jsAnimationManager.associateModelAndAnimation(dance, model) || !wasmAnimationManager.associateModelAndAnimation(dance, model)) {
                 console.error('Error - model', model, 'and animation', betaRun, 'cannot be associated!');
             };
         }));
 
-        let numRunners = parseInt(getParameterByName('numrunners') || '8');
-        const NUM_RUNNERS = isNaN(numRunners) ? 8 : numRunners;
-        
+        let numRunners = gui.values.NumRunners;
+
         let runners: Entity[] = [];
-        for (let i = 0; i < NUM_RUNNERS; i++) {
-            runners.push(CreateRandomDancingEntity(
-                betaRun,
-                betaDances,
-                animationManager,
-                DISTANCE_TO_TRAVEL,
-                VELOCITY, {
-                    minStartRunTime: getCachedParameterByName('minstartruntime', undefined),
-                    minDanceCycles: getCachedParameterByName('mindancecycles', undefined),
-                    maxDanceCycles: getCachedParameterByName('maxdancecycles', undefined)
-                }
-            ));
-        }
+        var setupRunners = () => {
+            for (let i = runners.length; i >= numRunners; i--) runners.pop();
+            for (let i = runners.length; i < numRunners; i++) {
+                runners.push(CreateRandomDancingEntity(
+                    betaRun,
+                    betaDances,
+                    DISTANCE_TO_TRAVEL,
+                    VELOCITY, {
+                        minStartRunTime: getCachedParameterByName('minstartruntime', undefined),
+                        minDanceCycles: getCachedParameterByName('mindancecycles', undefined),
+                        maxDanceCycles: getCachedParameterByName('maxdancecycles', undefined)
+                    }
+                ));
+            }
+        };
+        setupRunners();
+
+        //
+        // GUI
+        //
+        gui.values.OnSystemChange.push((type: SystemType) => {
+            switch (type) {
+                case 'JavaScript':
+                activeAnimationManager = jsAnimationManager;
+                break;
+                case 'WebAssembly':
+                activeAnimationManager = wasmAnimationManager;
+                break;
+            }
+        });
+        gui.values.OnNumRunnersChange.push((num: number) => {
+            numRunners = num;
+            setupRunners();
+        });
 
         window.addEventListener('resize', () => {
             if (!gl) return; 
@@ -167,7 +191,7 @@ class Demo {
         });
         let stats = new Stats();
         let animationTimePanel = stats.addPanel(new Stats.Panel('Anim', '#f8f', '#212'));
-        stats.showPanel(3);
+        stats.showPanel(2);
 
         document.body.appendChild(stats.dom);
 
@@ -185,7 +209,7 @@ class Demo {
         ));
         program.disengage(gl);
 
-        let r = animationManager.getSingleAnimation(betaRun, calls[1].modelData, 0);
+        let r = activeAnimationManager.getSingleAnimation(betaRun, calls[1].modelData, 0);
 
         let lastFrame = performance.now();
         let thisFrame: number;
@@ -220,7 +244,7 @@ class Demo {
             for (let i = 0; i < runners.length; i++) {
                 runners[i].update(dt);
                 if (runners[i].isFinished()) {
-                    runners[i] = CreateRandomDancingEntity(betaRun, betaDances, animationManager, DISTANCE_TO_TRAVEL, VELOCITY);
+                    runners[i] = CreateRandomDancingEntity(betaRun, betaDances, DISTANCE_TO_TRAVEL, VELOCITY);
                 }
             }
 
@@ -234,7 +258,7 @@ class Demo {
             for (let i = 0; i < runners.length; i++) {
                 for (let j = 0; j < calls.length; j++) {
                     let b4 = performance.now();
-                    let animationData = runners[i].getAnimationData(calls[j].modelData);
+                    let animationData = runners[i].getAnimationData(calls[j].modelData, activeAnimationManager);
                     let after = performance.now();
                     sum = sum + (after - b4);
                     // TODO SESS: Handle the extra memory used here

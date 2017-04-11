@@ -22,8 +22,8 @@ export class Entity {
         return this.i >= this.track.length;
     }
 
-    public getAnimationData(model: ModelData): AnimationResult {
-        return this.track[this.i].getAnimationData(model);
+    public getAnimationData(model: ModelData, animationManager: AnimationManager): AnimationResult {
+        return this.track[this.i].getAnimationData(model, animationManager);
     }
 
     public getTrackPos(): number {
@@ -38,7 +38,6 @@ export class EntityTrack {
         protected duration: number,
         protected animation1: EntityTrackAnimationInput,
         protected animation2: EntityTrackAnimationInput|null,
-        protected animationManager: AnimationManager,
         protected startTrackPos: number,
         protected endTrackPos: number
     ) {
@@ -53,14 +52,14 @@ export class EntityTrack {
         return this.tick >= this.duration;
     }
 
-    public getAnimationData(model: ModelData): AnimationResult {
+    public getAnimationData(model: ModelData, animationManager: AnimationManager): AnimationResult {
         if (this.animation2) {
-            return this.animationManager.getBlendedAnimation([this.animation1.animation, this.animation2.animation], model, [
+            return animationManager.getBlendedAnimation([this.animation1.animation, this.animation2.animation], model, [
                 (this.animation1.startTime + this.tick),
                 (this.animation2.startTime + this.tick)
             ], this.tick / this.duration);
         } else {
-            return this.animationManager.getSingleAnimation(this.animation1.animation, model, this.animation1.startTime + this.tick);
+            return animationManager.getSingleAnimation(this.animation1.animation, model, this.animation1.startTime + this.tick);
         }
     }
 
@@ -72,7 +71,6 @@ export class EntityTrack {
 export function CreateRandomDancingEntity(
     run: Animation,
     dances: Animation[],
-    animationManager: AnimationManager,
     distanceToTravel: number,
     velocity: number,
     options?: {
@@ -115,7 +113,6 @@ export function CreateRandomDancingEntity(
         startRunTime,
         { startTime: 0, animation: run },
         null,
-        animationManager,
         trackPos, trackPos = velocity * startRunTime
     ));
     runningTimeRemaining -= startRunTime;
@@ -133,7 +130,6 @@ export function CreateRandomDancingEntity(
             options.danceFadeInTime,
             { startTime: lastRunTime % run.duration, animation: run },
             { startTime: 0, animation: dances[animIndex] },
-            animationManager,
             trackPos, trackPos = trackPos
         ));
 
@@ -142,7 +138,6 @@ export function CreateRandomDancingEntity(
             numCycles * dances[animIndex].duration - options.danceFadeInTime - options.danceFadeOutTime,
             { startTime: options.danceFadeInTime, animation: dances[animIndex] },
             null,
-            animationManager,
             trackPos, trackPos
         ));
 
@@ -151,7 +146,6 @@ export function CreateRandomDancingEntity(
             options.danceFadeOutTime,
             { startTime: dances[animIndex].duration - options.danceFadeOutTime, animation: dances[animIndex] },
             { startTime: 0, animation: run },
-            animationManager,
             trackPos, trackPos
         ));
 
@@ -160,7 +154,6 @@ export function CreateRandomDancingEntity(
             timeDelta,
             { startTime: options.danceFadeOutTime || 0, animation: run },
             null,
-            animationManager,
             trackPos, trackPos += velocity * timeDelta
         ));
 
