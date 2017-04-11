@@ -1,4 +1,4 @@
-# WASM Experiments
+# WASM 3D Animation Demo
 
 http://aws-website-webassemblyskeletalanimation-ffaza.s3-website-us-east-1.amazonaws.com/
 
