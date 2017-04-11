@@ -1,6 +1,7 @@
 node_modules
 .vscode
-webroot/*.js
+webroot/demoapp.js
+webroot/outputtest.js
 js
 assets
 naive.wasm
