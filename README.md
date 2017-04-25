@@ -10,7 +10,7 @@ A couple of disclaimers, before starting:
   * If you want to provide some I can use in this repo, send a PR. FBX, Blend, textured or materials only, I'll make it work.
   * I need one walking animation, and at least one distinct dance animation (I used three in development)
   * If you're taking requests, plz do Danny Avidan of the Game Grumps :heart:
-4. I didn't intend to release the code when I started this project, so I apologize for 
+4. I didn't intend to release the code when I started this project, so I apologize that the animation code itself isn't documented better for learning how it works.
 
 ## Setup Emscripten
 ```
